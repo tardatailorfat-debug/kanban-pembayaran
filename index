@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kanban Transaksi Pembayaran</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+/* ── Reset & Root ──────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+  --txt:#e6edf3;--txt2:#8b949e;--txt3:#484f58;
+  --bdr:#30363d;--bdr2:#444c56;
+  --blue:#388bfd;--blue-bg:#1f3a6e;
+  --green:#3fb950;--green-bg:#1a3a25;
+  --orange:#d29922;--orange-bg:#3d2f0b;
+  --red:#f85149;--red-bg:#3d1a1a;
+  --purple:#bc8cff;--purple-bg:#2d1f4e;
+  --teal:#39d353;--teal-bg:#0d2e1a;
+  --accent:#f0883e;
+  --radius:8px;--radius-lg:12px;
+  --shadow:0 8px 32px rgba(0,0,0,.5);
+}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;font-size:13px;overflow:hidden}
+
+/* ── Login Screen ──────────────────────────────────── */
+#login-screen{
+  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  background:var(--bg);z-index:1000;
+  background-image:radial-gradient(ellipse at 20% 50%, rgba(56,139,253,.08) 0%, transparent 50%),
+                   radial-gradient(ellipse at 80% 20%, rgba(240,136,62,.05) 0%, transparent 40%);
+}
+.login-card{
+  background:var(--bg2);border:1px solid var(--bdr);border-radius:16px;
+  padding:40px;width:380px;box-shadow:var(--shadow);
+}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:32px}
+.login-logo .ico{width:40px;height:40px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.login-logo h1{font-size:17px;font-weight:700;letter-spacing:-.4px}
+.login-logo p{font-size:11px;color:var(--txt2)}
+.login-label{font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.login-field{margin-bottom:16px}
+.login-select,.login-input{
+  width:100%;background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--radius);
+  color:var(--txt);font-family:inherit;font-size:13px;padding:10px 12px;outline:none;
+  transition:border-color .15s;
+}
+.login-select:focus,.login-input:focus{border-color:var(--blue)}
+.login-btn{
+  width:100%;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);
+  font-family:inherit;font-size:14px;font-weight:600;padding:12px;cursor:pointer;
+  transition:opacity .15s,transform .1s;margin-top:8px;
+}
+.login-btn:hover{opacity:.9}
+.login-btn:active{transform:scale(.98)}
+.login-err{font-size:12px;color:var(--red);margin-top:8px;text-align:center;min-height:18px}
+
+/* ── App Layout ────────────────────────────────────── */
+.app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.topbar{
+  background:var(--bg2);border-bottom:1px solid var(--bdr);
+  padding:0 16px;display:flex;align-items:center;gap:12px;height:50px;flex-shrink:0;
+}
+.topbar-logo{display:flex;align-items:center;gap:8px}
+.topbar-logo .tl-ico{width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center}
+.topbar h1{font-size:14px;font-weight:600;letter-spacing:-.3px}
+.role-badge{
+  font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:20px;
+  background:var(--blue-bg);color:var(--blue);text-transform:uppercase;letter-spacing:.5px;
+}
+.topbar-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+.tb-btn{
+  background:var(--bg3);border:1px solid var(--bdr);border-radius:6px;
+  color:var(--txt2);font-size:12px;padding:5px 10px;cursor:pointer;display:flex;align-items:center;gap:5px;
+  font-family:inherit;transition:border-color .15s,color .15s;
+}
+.tb-btn:hover{border-color:var(--bdr2);color:var(--txt)}
+
+.stats-bar{
+  background:var(--bg2);border-bottom:1px solid var(--bdr);
+  padding:0 16px;display:flex;gap:20px;align-items:center;height:36px;flex-shrink:0;overflow-x:auto;
+}
+.stats-bar::-webkit-scrollbar{height:0}
+.stat-chip{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--txt2);white-space:nowrap}
+.stat-chip .dot{width:7px;height:7px;border-radius:50%}
+.stat-chip strong{color:var(--txt);font-weight:600}
+
+/* ── Board ─────────────────────────────────────────── */
+.board-wrap{display:flex;flex:1;overflow:hidden;padding:12px;gap:10px;overflow-x:auto}
+.board-wrap::-webkit-scrollbar{height:5px}
+.board-wrap::-webkit-scrollbar-track{background:var(--bg)}
+.board-wrap::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+
+.col{flex:0 0 230px;display:flex;flex-direction:column;background:var(--bg2);border-radius:10px;overflow:hidden;border:1px solid var(--bdr)}
+.col-hdr{padding:10px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--bdr);background:var(--bg3)}
+.col-hdr .ico{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center}
+.col-hdr .label{font-size:11.5px;font-weight:600;flex:1;color:var(--txt)}
+.col-hdr .cnt{font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px}
+
+.cards{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:7px}
+.cards::-webkit-scrollbar{width:3px}
+.cards::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
+
+.card{
+  background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--radius);
+  padding:10px;cursor:pointer;transition:border-color .15s,transform .1s,box-shadow .15s;
+}
+.card:hover{border-color:var(--bdr2);transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.card-id{font-size:10px;color:var(--txt3);font-family:'JetBrains Mono',monospace}
+.card-name{font-size:12.5px;font-weight:600;color:var(--txt);margin:3px 0 2px}
+.card-vendor{font-size:11px;color:var(--txt2);margin-bottom:6px;display:flex;align-items:center;gap:4px}
+.card-amount{font-size:13px;font-weight:600;color:var(--txt);font-family:'JetBrains Mono',monospace}
+.card-meta{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}
+.tag{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600}
+.card-dept{font-size:10px;color:var(--txt3)}
+.card-rev-badge{font-size:10px;padding:2px 6px;border-radius:4px;background:var(--red-bg);color:var(--red);font-weight:600}
+
+.add-btn{
+  margin:8px;padding:8px;border:1px dashed var(--bdr2);border-radius:7px;
+  background:none;color:var(--txt2);font-size:12px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:5px;flex-shrink:0;
+  font-family:inherit;transition:background .15s,color .15s,border-color .15s;
+}
+.add-btn:hover{background:var(--bg3);color:var(--txt);border-color:var(--blue)}
+
+/* ── Telegram Log Panel ────────────────────────────── */
+.tg-panel{background:var(--bg2);border-top:1px solid var(--bdr);flex-shrink:0;max-height:120px;overflow-y:auto}
+.tg-panel::-webkit-scrollbar{width:3px}
+.tg-panel::-webkit-scrollbar-thumb{background:var(--bg4)}
+.tg-hdr{padding:6px 14px;font-size:10.5px;color:var(--txt3);font-weight:600;display:flex;align-items:center;gap:6px;position:sticky;top:0;background:var(--bg2);z-index:1;border-bottom:1px solid var(--bdr)}
+.tg-msg{padding:4px 14px;border-bottom:1px solid rgba(255,255,255,.03);font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--txt2);line-height:1.6}
+.tg-time{color:var(--txt3);margin-right:8px}
+.tg-txt{color:#79c0ff}
+
+/* ── Overlay / Modal ───────────────────────────────── */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;
+  display:flex;align-items:center;justify-content:center;padding:16px;
+  backdrop-filter:blur(2px);
+}
+.modal{
+  background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--radius-lg);
+  width:100%;max-width:560px;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow);
+}
+.modal::-webkit-scrollbar{width:4px}
+.modal::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
+
+.modal-hdr{padding:16px 18px 14px;border-bottom:1px solid var(--bdr);display:flex;align-items:flex-start;gap:10px;position:sticky;top:0;background:var(--bg2);z-index:2}
+.m-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.modal-hdr h2{font-size:14px;font-weight:600;color:var(--txt)}
+.modal-hdr p{font-size:11.5px;color:var(--txt2);margin-top:2px}
+.modal-close{margin-left:auto;background:none;border:none;color:var(--txt3);cursor:pointer;padding:2px;font-size:18px;transition:color .15s}
+.modal-close:hover{color:var(--txt)}
+
+.modal-body{padding:16px 18px}
+.section{margin-bottom:16px}
+.section label,.slbl{display:block;font-size:10.5px;color:var(--txt3);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+.fld{
+  font-size:13px;color:var(--txt);padding:8px 10px;background:var(--bg3);
+  border-radius:var(--radius);border:1px solid var(--bdr);font-family:inherit;
+}
+input.fld,select.fld,textarea.fld{width:100%;outline:none;transition:border-color .15s}
+input.fld:focus,select.fld:focus,textarea.fld:focus{border-color:var(--blue)}
+textarea.fld{resize:vertical;min-height:60px}
+select.fld option{background:var(--bg3)}
+
+.info-grid{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:12.5px}
+.info-grid .k{color:var(--txt2)}
+.info-grid .v{color:var(--txt);font-weight:500;font-family:'JetBrains Mono',monospace;font-size:12px}
+.info-grid .v.plain{font-family:inherit;font-size:13px}
+
+.divider{height:1px;background:var(--bdr);margin:12px 0}
+
+.tax-box{background:var(--bg3);border-radius:var(--radius);padding:12px;border:1px solid var(--bdr)}
+.tax-row{display:flex;justify-content:space-between;padding:3px 0;font-size:12.5px;color:var(--txt)}
+.tax-row.total{font-weight:700;border-top:1px solid var(--bdr);margin-top:4px;padding-top:6px;color:var(--green)}
+
+.hist-item{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.hist-item:last-child{border-bottom:none}
+.hist-dot{width:7px;height:7px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.hist-text{font-size:12px;color:var(--txt)}
+.hist-time{font-size:11px;color:var(--txt3);font-family:'JetBrains Mono',monospace}
+
+.action-area{padding:12px 18px 16px;border-top:1px solid var(--bdr);display:flex;flex-direction:column;gap:8px}
+
+/* ── Buttons ───────────────────────────────────────── */
+.btn{
+  padding:9px 16px;border-radius:var(--radius);font-size:13px;font-weight:600;
+  cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;
+  gap:6px;transition:opacity .15s,transform .1s;font-family:inherit;
+}
+.btn:hover{opacity:.85}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-success{background:var(--green);color:#0d1117}
+.btn-danger{background:var(--red);color:#fff}
+.btn-warn{background:var(--orange);color:#fff}
+.btn-ghost{background:var(--bg3);color:var(--txt);border:1px solid var(--bdr)}
+.btn-teal{background:var(--teal);color:#0d1117}
+.btn-purple{background:var(--purple);color:#0d1117}
+
+/* ── File Upload ───────────────────────────────────── */
+.upload-zone{
+  border:1.5px dashed var(--bdr2);border-radius:var(--radius);padding:16px;
+  text-align:center;cursor:pointer;transition:border-color .15s,background .15s;
+  background:var(--bg3);
+}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--blue);background:rgba(56,139,253,.05)}
+.upload-zone input{display:none}
+.upload-zone .uz-ico{font-size:22px;color:var(--txt3);margin-bottom:6px}
+.upload-zone p{font-size:12px;color:var(--txt2)}
+.upload-zone small{font-size:10.5px;color:var(--txt3)}
+
+.file-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.file-item{
+  display:flex;align-items:center;gap:8px;background:var(--bg3);
+  border:1px solid var(--bdr);border-radius:var(--radius);padding:7px 10px;
+}
+.file-item .fi-name{flex:1;font-size:12px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-item .fi-cat{font-size:10px;padding:2px 6px;border-radius:4px;background:var(--blue-bg);color:var(--blue);font-weight:600}
+.file-item a{color:var(--blue);font-size:11px;text-decoration:none;flex-shrink:0}
+.file-item a:hover{text-decoration:underline}
+.file-progress{height:3px;background:var(--bg4);border-radius:2px;margin-top:6px;overflow:hidden}
+.file-progress-bar{height:100%;background:var(--blue);border-radius:2px;transition:width .3s}
+
+/* ── Catatan Revisi ────────────────────────────────── */
+.revisi-box{
+  background:var(--red-bg);border:1px solid rgba(248,81,73,.3);border-radius:var(--radius);
+  padding:10px 12px;
+}
+.revisi-box .rv-lbl{font-size:10px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.revisi-box p{font-size:12.5px;color:var(--txt)}
+
+/* ── Toast ─────────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:20px;right:20px;background:var(--bg3);color:var(--txt);
+  padding:10px 16px;border-radius:var(--radius);font-size:13px;z-index:300;
+  display:flex;align-items:center;gap:8px;border:1px solid var(--bdr2);
+  box-shadow:var(--shadow);animation:fadeUp .2s ease;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Loading ───────────────────────────────────────── */
+.loader{
+  position:fixed;inset:0;background:rgba(13,17,23,.8);z-index:500;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+}
+.spinner{width:32px;height:32px;border:3px solid var(--bg4);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader p{font-size:13px;color:var(--txt2)}
+
+/* ── Report Modal ──────────────────────────────────── */
+.report-stat{background:var(--bg3);border-radius:var(--radius);padding:12px}
+.report-stat .rs-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.report-stat .rs-val{font-size:18px;font-weight:700;color:var(--txt)}
+.prog-bar-wrap{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.prog-bar{height:100%;border-radius:3px;transition:width .5s ease}
+
+/* ── Scrollbar global ──────────────────────────────── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN ──────────────────────────────────────────── -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="ico"><i class="ti ti-building-bank" style="font-size:18px;color:#0d1117"></i></div>
+      <div>
+        <h1>Kanban Pembayaran</h1>
+        <p>Sistem Transaksi Keuangan</p>
+      </div>
+    </div>
+    <div class="login-field">
+      <div class="login-label">Role</div>
+      <select class="login-select" id="ls-role">
+        <option value="">— Pilih Role —</option>
+        <option value="owner">Owner</option>
+        <option value="finance">Finance</option>
+        <option value="releaser">Releaser BOD</option>
+        <option value="admin_produksi">Admin Produksi</option>
+        <option value="admin_sales">Admin Sales</option>
+        <option value="admin_marketing">Admin Marketing</option>
+      </select>
+    </div>
+    <div class="login-field">
+      <div class="login-label">Nama Pengguna</div>
+      <input type="text" class="login-input" id="ls-name" placeholder="Masukkan nama Anda">
+    </div>
+    <div class="login-field">
+      <div class="login-label">Password</div>
+      <input type="password" class="login-input" id="ls-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">
+      <i class="ti ti-login" style="margin-right:6px"></i>Masuk
+    </button>
+    <div class="login-err" id="ls-err"></div>
+  </div>
+</div>
+
+<!-- ── APP ────────────────────────────────────────────── -->
+<div class="app" id="app" style="display:none">
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="tl-ico"><i class="ti ti-building-bank" style="font-size:14px;color:#0d1117"></i></div>
+      <h1>Kanban Transaksi Pembayaran</h1>
+    </div>
+    <span class="role-badge" id="topbar-role"></span>
+    <span style="font-size:12px;color:var(--txt2);margin-left:4px" id="topbar-name"></span>
+    <div class="topbar-actions">
+      <button class="tb-btn" onclick="loadAll()"><i class="ti ti-refresh" style="font-size:13px"></i> Refresh</button>
+      <button class="tb-btn" id="btn-report" onclick="showReport()"><i class="ti ti-chart-bar" style="font-size:13px"></i> Laporan</button>
+      <button class="tb-btn" onclick="logout()"><i class="ti ti-logout" style="font-size:13px"></i> Keluar</button>
+    </div>
+  </div>
+  <div class="stats-bar" id="stats-bar"></div>
+  <div class="board-wrap" id="board"></div>
+  <div class="tg-panel">
+    <div class="tg-hdr"><i class="ti ti-brand-telegram" style="font-size:12px;color:#0ea5e9"></i> Log Aktivitas Sistem</div>
+    <div id="tg-logs"></div>
+  </div>
+</div>
+
+<!-- ── LOADER ─────────────────────────────────────────── -->
+<div class="loader" id="loader" style="display:none">
+  <div class="spinner"></div>
+  <p id="loader-msg">Memuat data...</p>
+</div>
+
+<!-- ── TOAST ──────────────────────────────────────────── -->
+<div class="toast" id="toast" style="display:none"></div>
+
+<!-- ── MODAL CONTAINER ────────────────────────────────── -->
+<div id="modal-area"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  CONFIG — GANTI URL INI dengan URL Web App dari Apps Script
+// ════════════════════════════════════════════════════════════
+const API = 'https://script.google.com/macros/s/AKfycbxb0bUxkWGda81Y9Aq0L9oxjmX9nMr-x90Gxrf9eU40FBEZSaTnoQ9XuwcdPtqxz0ZbTA/exec';
+
+// ── Passwords (edit sesuai kebutuhan) ─────────────────────
+const PASSWORDS = {
+  owner:           'owner123',
+  finance:         'finance123',
+  releaser:        'releaser123',
+  admin_produksi:  'produksi123',
+  admin_sales:     'sales123',
+  admin_marketing: 'marketing123',
+};
+
+const ROLE_LABELS = {
+  owner:'Owner',finance:'Finance',releaser:'Releaser BOD',
+  admin_produksi:'Admin Produksi',admin_sales:'Admin Sales',admin_marketing:'Admin Marketing'
+};
+
+// ── Kolom Kanban ───────────────────────────────────────────
+const COLS = [
+  {id:'pengajuan',      label:'Pengajuan Dana',    icon:'ti-file-plus',       bg:'rgba(56,139,253,.15)',  fg:'#79c0ff', acc:'#388bfd'},
+  {id:'verifikasi_berkas', label:'Verifikasi Berkas',icon:'ti-clipboard-check',bg:'rgba(188,140,255,.15)',fg:'#d2a8ff',acc:'#bc8cff'},
+  {id:'verifikasi_pajak',  label:'Verifikasi Pajak', icon:'ti-receipt-tax',    bg:'rgba(210,153,34,.15)',  fg:'#e3b341', acc:'#d29922'},
+  {id:'maker',          label:'Maker & Approver',  icon:'ti-user-check',      bg:'rgba(63,185,80,.15)',   fg:'#7ee787', acc:'#3fb950'},
+  {id:'releaser',       label:'Releaser BOD',      icon:'ti-building-bank',   bg:'rgba(248,81,73,.15)',   fg:'#ffa198', acc:'#f85149'},
+  {id:'bukti',          label:'Bukti Transaksi',   icon:'ti-circle-check',    bg:'rgba(57,211,83,.15)',   fg:'#39d353', acc:'#39d353'},
+];
+
+const PAJAK_TYPES = [
+  {id:'pph21',label:'PPh 21',rates:[{r:5,l:'5%'},{r:15,l:'15%'},{r:25,l:'25%'},{r:30,l:'30%'}]},
+  {id:'pph22',label:'PPh 22',rates:[{r:1.5,l:'1.5%'},{r:2,l:'2%'},{r:3,l:'3%'}]},
+  {id:'pph23',label:'PPh 23',rates:[{r:2,l:'2%'},{r:15,l:'15%'}]},
+  {id:'pph4', label:'PPh 4(2)',rates:[{r:2,l:'2%'},{r:2.5,l:'2.5%'},{r:10,l:'10%'},{r:20,l:'20%'}]},
+  {id:'ppn',  label:'PPN',   rates:[{r:11,l:'11%'}]},
+];
+
+const DEPTS = ['Keuangan','Operasional','HRD','IT','Procurement','Umum','Direksi','Produksi','Sales','Marketing'];
+const TIPES = ['Pembelian Barang','Pembelian BBM','Pembayaran Tagihan','Biaya Operasional','Honor/Jasa','Sewa','Lainnya'];
+const BANKS = ['BCA','BRI','BNI','Mandiri','BSI','CIMB','Danamon','Permata','BTN','Lainnya'];
+
+// ── State ──────────────────────────────────────────────────
+let currentUser = null; // {role, name}
+let trxs = [];
+let tgLogs = [];
+let toastTimer = null;
+
+// ── Helpers ────────────────────────────────────────────────
+const fmt  = n => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0}).format(n);
+const fmtD = d => { const dt=new Date(d); return dt.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); };
+const now  = () => new Date().toISOString();
+const esc  = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function can(action) {
+  const r = currentUser?.role;
+  if (r === 'owner') return true;
+  if (action === 'pengajuan')  return ['admin_produksi','admin_sales','admin_marketing'].includes(r);
+  if (action === 'finance')    return r === 'finance';
+  if (action === 'releaser')   return r === 'releaser';
+  if (action === 'download')   return ['admin_produksi','admin_sales','admin_marketing','finance','releaser'].includes(r);
+  if (action === 'report')     return ['owner','finance'].includes(r);
+  return false;
+}
+
+// ── Login ──────────────────────────────────────────────────
+function doLogin() {
+  const role = document.getElementById('ls-role').value;
+  const name = document.getElementById('ls-name').value.trim();
+  const pass = document.getElementById('ls-pass').value;
+  const errEl = document.getElementById('ls-err');
+  errEl.textContent = '';
+  if (!role) { errEl.textContent = 'Pilih role terlebih dahulu.'; return; }
+  if (!name) { errEl.textContent = 'Masukkan nama Anda.'; return; }
+  if (pass !== PASSWORDS[role]) { errEl.textContent = 'Password salah.'; return; }
+  currentUser = {role, name};
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('topbar-role').textContent = ROLE_LABELS[role];
+  document.getElementById('topbar-name').textContent = '– ' + name;
+  if (!can('report')) document.getElementById('btn-report').style.display='none';
+  loadAll();
+}
+
+function logout() {
+  currentUser = null;
+  trxs = [];
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('ls-pass').value = '';
+  document.getElementById('ls-err').textContent = '';
+}
+
+// ── API calls ──────────────────────────────────────────────
+async function apiGet(params) {
+  const qs = new URLSearchParams(params).toString();
+  const res = await fetch(API + '?' + qs);
+  return res.json();
+}
+async function apiPost(body) {
+  const res = await fetch(API, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  return res.json();
+}
+
+function showLoader(msg='Memuat data...') {
+  document.getElementById('loader-msg').textContent = msg;
+  document.getElementById('loader').style.display = 'flex';
+}
+function hideLoader() { document.getElementById('loader').style.display = 'none'; }
+
+async function loadAll() {
+  showLoader('Memuat data transaksi...');
+  try {
+    const res = await apiGet({action:'getTrxs'});
+    if (res.ok) trxs = res.data;
+    renderBoard();
+    renderStats();
+  } catch(e) {
+    showToast('Gagal memuat data. Periksa koneksi.','ti-alert-triangle');
+  }
+  hideLoader();
+}
+
+// ── Board Render ───────────────────────────────────────────
+function renderBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  COLS.forEach(col => {
+    const cards = trxs.filter(t => t.status === col.id);
+    const colEl = document.createElement('div');
+    colEl.className = 'col';
+
+    const canAdd = (col.id === 'pengajuan') && (can('pengajuan') || can('owner'));
+
+    colEl.innerHTML = `
+      <div class="col-hdr">
+        <div class="ico" style="background:${col.bg}"><i class="ti ${col.icon}" style="font-size:13px;color:${col.fg}"></i></div>
+        <span class="label">${col.label}</span>
+        <span class="cnt" style="background:${col.bg};color:${col.fg}">${cards.length}</span>
+      </div>
+      <div class="cards" id="cards-${col.id}">
+        ${cards.map(t => renderCardHTML(t, col)).join('')}
+      </div>
+      ${canAdd ? `<button class="add-btn" onclick="openAddModal()"><i class="ti ti-plus" style="font-size:12px"></i> Tambah Pengajuan</button>` : ''}
+    `;
+    board.appendChild(colEl);
+
+    // attach click handlers
+    cards.forEach(t => {
+      const el = document.getElementById('card-'+t.id);
+      if (el) el.onclick = () => openTrxModal(t.id);
+    });
+  });
+}
+
+function renderCardHTML(t, col) {
+  const hasRevisi = t.catatanRevisi && t.status === 'pengajuan';
+  const net = t.pajak?.nominalNet != null ? t.pajak.nominalNet : t.nominal;
+  return `
+    <div class="card" id="card-${t.id}">
+      <div class="card-id">${t.id}</div>
+      <div class="card-name">${esc(t.name)}</div>
+      <div class="card-vendor"><i class="ti ti-building" style="font-size:10px"></i>${esc(t.vendor)}</div>
+      <div class="card-amount">${fmt(net)}</div>
+      <div class="card-meta">
+        <span class="tag" style="background:${col.bg};color:${col.fg}">${esc(t.tipe?.split(' ')[0]||'')}</span>
+        <span class="card-dept">${esc(t.dept)}</span>
+        ${t.pajak ? `<i class="ti ti-receipt-tax" style="font-size:11px;color:${col.acc};margin-left:auto"></i>` : ''}
+        ${hasRevisi ? `<span class="card-rev-badge">REVISI</span>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function renderStats() {
+  const bar = document.getElementById('stats-bar');
+  const totalSelesai = trxs.filter(t=>t.status==='bukti').length;
+  const totalPajak   = trxs.reduce((s,t)=>s+(t.pajak?.nominalPajak||0),0);
+  bar.innerHTML = COLS.map(c => {
+    const cnt = trxs.filter(t=>t.status===c.id).length;
+    return `<div class="stat-chip"><div class="dot" style="background:${c.acc}"></div><span>${c.label.split(' ').slice(0,2).join(' ')}</span><strong>${cnt}</strong></div>`;
+  }).join('') +
+  `<div style="margin-left:auto;display:flex;gap:20px">
+    <div class="stat-chip"><i class="ti ti-circle-check" style="color:var(--green);font-size:13px"></i><span>Selesai</span><strong>${totalSelesai}</strong></div>
+    <div class="stat-chip"><i class="ti ti-receipt" style="color:var(--orange);font-size:13px"></i><span>Total Pajak</span><strong>${fmt(totalPajak)}</strong></div>
+  </div>`;
+}
+
+// ── Toast ──────────────────────────────────────────────────
+function showToast(msg, icon='ti-check') {
+  const el = document.getElementById('toast');
+  el.innerHTML = `<i class="ti ${icon}" style="font-size:15px;color:var(--green)"></i> ${msg}`;
+  el.style.display = 'flex';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.style.display='none', 3000);
+}
+
+// ── Telegram Log ───────────────────────────────────────────
+function addLog(msg) {
+  tgLogs.unshift({ts:now(), msg});
+  const container = document.getElementById('tg-logs');
+  const div = document.createElement('div');
+  div.className = 'tg-msg';
+  div.innerHTML = `<span class="tg-time">${new Date().toLocaleTimeString('id-ID')}</span><span class="tg-txt">${esc(msg)}</span>`;
+  container.prepend(div);
+}
+
+// ── UPDATE TRX ─────────────────────────────────────────────
+async function updateTrx(id, patch, histMsg, logMsg) {
+  showLoader('Menyimpan...');
+  try {
+    const res = await apiPost({action:'updateTrx', id, patch, histMsg});
+    if (res.ok) {
+      // update local state
+      const idx = trxs.findIndex(t=>t.id===id);
+      if (idx !== -1) {
+        trxs[idx] = {...trxs[idx], ...patch};
+        if (!trxs[idx].history) trxs[idx].history = [];
+        trxs[idx].history.push({msg:histMsg, ts:now(), col:patch.status||trxs[idx].status});
+      }
+      if (logMsg) addLog(logMsg);
+      renderBoard();
+      renderStats();
+    } else {
+      showToast('Gagal menyimpan: ' + res.error, 'ti-alert-triangle');
+    }
+  } catch(e) {
+    showToast('Error koneksi.','ti-alert-triangle');
+  }
+  hideLoader();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MODAL — ADD PENGAJUAN
+// ═══════════════════════════════════════════════════════════
+function openAddModal() {
+  const nextId = 'TRX' + String(trxs.length + 1).padStart(3,'0');
+  const html = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:rgba(56,139,253,.15)"><i class="ti ti-file-plus" style="font-size:16px;color:#79c0ff"></i></div>
+        <div><h2>Tambah Pengajuan Baru</h2><p>ID: ${nextId}</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="section">
+          <label>Nama Pengajuan</label>
+          <input type="text" class="fld" id="f-name" placeholder="Contoh: Pembelian ATK Q3...">
+        </div>
+        <div class="row2 section">
+          <div><label>Nama Pengaju</label><input type="text" class="fld" id="f-pengaju" value="${esc(currentUser.name)}"></div>
+          <div><label>Departemen</label><select class="fld" id="f-dept">${DEPTS.map(d=>`<option>${d}</option>`).join('')}</select></div>
+        </div>
+        <div class="row2 section">
+          <div><label>Tipe Transaksi</label><select class="fld" id="f-tipe">${TIPES.map(d=>`<option>${d}</option>`).join('')}</select></div>
+          <div><label>Tanggal</label><input type="date" class="fld" id="f-tanggal" value="${new Date().toISOString().slice(0,10)}"></div>
+        </div>
+        <div class="row2 section">
+          <div><label>Nama Vendor / Penerima</label><input type="text" class="fld" id="f-vendor" placeholder="Nama vendor/penerima"></div>
+          <div><label>No. Invoice / Kwitansi</label><input type="text" class="fld" id="f-invoice" placeholder="INV-..."></div>
+        </div>
+        <div class="row2 section">
+          <div><label>No. Rekening</label><input type="text" class="fld" id="f-rek" placeholder="Nomor rekening"></div>
+          <div><label>Nama Bank</label><select class="fld" id="f-bank">${BANKS.map(b=>`<option>${b}</option>`).join('')}</select></div>
+        </div>
+        <div class="section">
+          <label>NPWP / NIK</label>
+          <input type="text" class="fld" id="f-npwp" placeholder="Nomor NPWP atau NIK">
+        </div>
+        <div class="section">
+          <label>Nominal (Rp)</label>
+          <input type="text" class="fld" id="f-nominal" placeholder="Contoh: 5000000">
+        </div>
+        <div class="section">
+          <label>Deskripsi / Keterangan</label>
+          <textarea class="fld" id="f-desk" placeholder="Uraian singkat..."></textarea>
+        </div>
+        <div class="section">
+          <label>Lampiran Dokumen</label>
+          <div class="upload-zone" id="uz-add" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event,'add')" onclick="document.getElementById('fi-add').click()">
+            <div class="uz-ico"><i class="ti ti-cloud-upload"></i></div>
+            <p>Klik atau seret file ke sini</p>
+            <small>PDF, JPG, PNG, max 10MB per file</small>
+            <input type="file" id="fi-add" multiple accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileSelect(this,'add')">
+          </div>
+          <div class="file-list" id="fl-add"></div>
+        </div>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-primary" onclick="submitAdd()"><i class="ti ti-send" style="font-size:14px"></i> Ajukan Permintaan Dana</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('modal-area').innerHTML = html;
+  window._pendingFiles = {add:[]};
+}
+
+async function submitAdd() {
+  const name    = document.getElementById('f-name')?.value.trim();
+  const pengaju = document.getElementById('f-pengaju')?.value.trim();
+  const vendor  = document.getElementById('f-vendor')?.value.trim();
+  const nominal = document.getElementById('f-nominal')?.value.replace(/\D/g,'');
+  if (!name||!pengaju||!vendor||!nominal) { showToast('Lengkapi field wajib','ti-alert-triangle'); return; }
+
+  const data = {
+    name, pengaju,
+    dept:       document.getElementById('f-dept').value,
+    tipe:       document.getElementById('f-tipe').value,
+    tanggal:    document.getElementById('f-tanggal').value,
+    vendor,
+    invoice:    document.getElementById('f-invoice').value,
+    nominal:    Number(nominal),
+    deskripsi:  document.getElementById('f-desk').value,
+    noRekening: document.getElementById('f-rek').value,
+    namaBank:   document.getElementById('f-bank').value,
+    npwpNik:    document.getElementById('f-npwp').value,
+  };
+
+  showLoader('Menyimpan pengajuan...');
+  try {
+    const res = await apiPost({action:'addTrx', data});
+    if (res.ok) {
+      const newId = res.id;
+      // upload pending files
+      const files = window._pendingFiles?.add || [];
+      for (const f of files) {
+        await uploadFileToDrive(newId, f.file, 'lampiran_pengajuan');
+      }
+      showToast('Pengajuan ' + newId + ' berhasil dibuat','ti-file-plus');
+      addLog('📋 Pengajuan baru: ' + data.name + ' | ' + data.pengaju + ' | ' + fmt(data.nominal));
+      closeModal();
+      await loadAll();
+    } else {
+      showToast('Gagal menyimpan','ti-alert-triangle');
+    }
+  } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
+  hideLoader();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MODAL — DETAIL TRX
+// ═══════════════════════════════════════════════════════════
+async function openTrxModal(id) {
+  const t = trxs.find(x=>x.id===id);
+  if (!t) return;
+  const col = COLS.find(c=>c.id===t.status);
+
+  // load files
+  let files = [];
+  try {
+    const res = await apiGet({action:'getFiles', trxId:id});
+    if (res.ok) files = res.data;
+  } catch(e){}
+
+  const pajak = t.pajak;
+  const net   = pajak?.nominalNet != null ? pajak.nominalNet : t.nominal;
+
+  // Build action panel
+  let actionHTML = buildActionHTML(t);
+
+  // Build file sections
+  const lampiranFiles  = files.filter(f=>f.category==='lampiran_pengajuan');
+  const buktiBayarFiles= files.filter(f=>f.category==='bukti_bayar');
+
+  const html = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:${col.bg}"><i class="ti ${col.icon}" style="font-size:16px;color:${col.fg}"></i></div>
+        <div><h2>${esc(t.name)}</h2><p>${t.id} · ${esc(t.vendor)} · ${esc(t.dept)}</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+
+        ${t.catatanRevisi && t.status==='pengajuan' ? `
+        <div class="revisi-box section">
+          <div class="rv-lbl"><i class="ti ti-alert-triangle"></i> Catatan Revisi dari Finance</div>
+          <p>${esc(t.catatanRevisi)}</p>
+        </div>` : ''}
+
+        <div class="section">
+          <label>Informasi Transaksi</label>
+          <div class="info-grid">
+            <span class="k">Pengaju</span><span class="v plain">${esc(t.pengaju)}</span>
+            <span class="k">Departemen</span><span class="v plain">${esc(t.dept)}</span>
+            <span class="k">Tipe</span><span class="v plain">${esc(t.tipe)}</span>
+            <span class="k">Invoice</span><span class="v">${esc(t.invoice)}</span>
+            <span class="k">Tanggal</span><span class="v">${fmtD(t.createdAt)}</span>
+            <span class="k">Nominal Bruto</span><span class="v">${fmt(t.nominal)}</span>
+            ${t.noRekening?`<span class="k">No. Rekening</span><span class="v">${esc(t.noRekening)} (${esc(t.namaBank)})</span>`:''}
+            ${t.npwpNik?`<span class="k">NPWP / NIK</span><span class="v">${esc(t.npwpNik)}</span>`:''}
+          </div>
+        </div>
+
+        ${t.deskripsi ? `<div class="section"><label>Deskripsi</label><div class="fld" style="font-size:12.5px;color:var(--txt2)">${esc(t.deskripsi)}</div></div>` : ''}
+
+        ${pajak ? `
+        <div class="section">
+          <label>Detail Pajak</label>
+          <div class="tax-box">
+            <div class="tax-row"><span>Jenis</span><span>${esc(pajak.typeLabel)} ${pajak.rate}%</span></div>
+            <div class="tax-row"><span>Gross Up</span><span>${pajak.grossUp?'Ya':'Tidak'}</span></div>
+            <div class="tax-row"><span>Nominal Pajak</span><span>${fmt(pajak.nominalPajak)}</span></div>
+            <div class="tax-row total"><span>Net Dibayar</span><span>${fmt(pajak.nominalNet)}</span></div>
+            <div class="tax-row"><span>Bukti Potong</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px">${esc(pajak.buktiPotong)}</span></div>
+          </div>
+        </div>` : ''}
+
+        ${t.makerId ? `<div class="section"><label>Nomor Maker</label><div class="fld" style="font-family:'JetBrains Mono',monospace;font-size:12px">${esc(t.makerId)}</div></div>` : ''}
+        ${t.buktNo  ? `<div class="section"><label>Nomor Bukti Transaksi</label><div class="fld" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--green)">${esc(t.buktNo)}</div></div>` : ''}
+
+        ${lampiranFiles.length>0 ? `
+        <div class="section">
+          <label>Lampiran Dokumen</label>
+          <div class="file-list">${lampiranFiles.map(f=>`
+            <div class="file-item">
+              <i class="ti ti-paperclip" style="font-size:13px;color:var(--txt3)"></i>
+              <span class="fi-name">${esc(f.fileName)}</span>
+              <span class="fi-cat">Lampiran</span>
+              <a href="${f.driveUrl}" target="_blank"><i class="ti ti-external-link" style="font-size:12px"></i> Buka</a>
+            </div>`).join('')}
+          </div>
+        </div>` : ''}
+
+        ${buktiBayarFiles.length>0 ? `
+        <div class="section">
+          <label>Bukti Pembayaran</label>
+          <div class="file-list">${buktiBayarFiles.map(f=>`
+            <div class="file-item">
+              <i class="ti ti-receipt" style="font-size:13px;color:var(--green)"></i>
+              <span class="fi-name">${esc(f.fileName)}</span>
+              <span class="fi-cat" style="background:var(--green-bg);color:var(--green)">Bukti</span>
+              <a href="${f.driveUrl}" target="_blank"><i class="ti ti-external-link" style="font-size:12px"></i> Buka</a>
+            </div>`).join('')}
+          </div>
+        </div>` : ''}
+
+        <div class="section">
+          <label>Riwayat</label>
+          ${[...(t.history||[])].reverse().map(h=>{
+            const hcol=COLS.find(c=>c.id===h.col)||COLS[0];
+            return `<div class="hist-item">
+              <div class="hist-dot" style="background:${hcol.acc}"></div>
+              <div><div class="hist-text">${esc(h.msg)}</div><div class="hist-time">${fmtD(h.ts)}</div></div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+      ${actionHTML}
+    </div>
+  </div>`;
+
+  document.getElementById('modal-area').innerHTML = html;
+  window._pendingFiles = window._pendingFiles || {};
+  window._currentTrxId = id;
+}
+
+// ── Action HTML per status ─────────────────────────────────
+function buildActionHTML(t) {
+  const r = currentUser?.role;
+
+  // PENGAJUAN — hanya bisa di-push oleh finance atau owner
+  if (t.status === 'pengajuan') {
+    if (!can('finance')) return '';
+    return `<div class="action-area">
+      <button class="btn btn-primary" onclick="doAction('${t.id}',{status:'verifikasi_berkas'},'Berkas dikirim ke Verifikasi Berkas','TRX ${t.id} → Verifikasi Berkas')">
+        <i class="ti ti-send" style="font-size:14px"></i> Kirim ke Verifikasi Berkas
+      </button>
+    </div>`;
+  }
+
+  // VERIFIKASI BERKAS
+  if (t.status === 'verifikasi_berkas') {
+    if (!can('finance')) return '';
+    return `<div class="action-area">
+      <button class="btn btn-success" onclick="doAction('${t.id}',{status:'verifikasi_pajak'},'Berkas dinyatakan lengkap dan valid','✅ Berkas ${t.id} lengkap')">
+        <i class="ti ti-circle-check" style="font-size:14px"></i> Berkas Lengkap
+      </button>
+      <div>
+        <label style="font-size:10.5px;color:var(--txt3);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:block">Catatan Revisi (jika ada)</label>
+        <textarea class="fld" id="catatan-revisi" placeholder="Tulis catatan untuk pengaju..." style="min-height:50px"></textarea>
+      </div>
+      <button class="btn btn-danger" onclick="doRevisi('${t.id}')">
+        <i class="ti ti-arrow-back" style="font-size:14px"></i> Kembalikan untuk Revisi
+      </button>
+    </div>`;
+  }
+
+  // VERIFIKASI PAJAK
+  if (t.status === 'verifikasi_pajak') {
+    if (!can('finance')) return '';
+    return `<div class="action-area" id="pajak-action">
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-success" style="flex:1" onclick="setPajakChoice(false,'${t.id}')">
+          <i class="ti ti-x" style="font-size:14px"></i> Tidak Ada Pajak
+        </button>
+        <button class="btn btn-warn" style="flex:1" onclick="setPajakChoice(true,'${t.id}')">
+          <i class="ti ti-receipt-tax" style="font-size:14px"></i> Ada Pajak
+        </button>
+      </div>
+    </div>`;
+  }
+
+  // MAKER
+  if (t.status === 'maker') {
+    if (!can('finance')) return '';
+    return `<div class="action-area">
+      <button class="btn btn-success" onclick="doMaker('${t.id}')">
+        <i class="ti ti-user-check" style="font-size:14px"></i> Buat & Approve Maker Transaksi
+      </button>
+    </div>`;
+  }
+
+  // RELEASER
+  if (t.status === 'releaser') {
+    if (!can('releaser')) return '';
+    const net = t.pajak?.nominalNet || t.nominal;
+    return `<div class="action-area">
+      <button class="btn btn-danger" style="margin-bottom:0" onclick="sendBODReminder('${t.id}','${esc(t.name)}','${fmt(net)}','${t.makerId||''}')">
+        <i class="ti ti-bell-ringing" style="font-size:14px"></i> Kirim Notifikasi ke BOD
+      </button>
+      <button class="btn btn-teal" onclick="doReleaser('${t.id}')">
+        <i class="ti ti-player-play" style="font-size:14px"></i> Tandai Sudah Dieksekusi BOD
+      </button>
+    </div>`;
+  }
+
+  // BUKTI — finance bisa upload bukti bayar, admin bisa download
+  if (t.status === 'bukti') {
+    let html = `<div class="action-area">
+      <div style="padding:10px 12px;background:var(--green-bg);border-radius:var(--radius);border:1px solid rgba(63,185,80,.3)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <i class="ti ti-circle-check" style="font-size:16px;color:var(--green)"></i>
+          <span style="font-size:13px;font-weight:600;color:var(--green)">${esc(t.buktNo||'')}</span>
+        </div>
+        <div style="font-size:12px;color:var(--teal)">${t.tgSent?'✅ Laporan sudah tercatat di sistem':''}</div>
+      </div>`;
+
+    if (can('finance')) {
+      html += `
+      <div>
+        <label style="font-size:10.5px;color:var(--txt3);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:block">Upload Bukti Pembayaran</label>
+        <div class="upload-zone" id="uz-bukti" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event,'bukti')" onclick="document.getElementById('fi-bukti').click()">
+          <div class="uz-ico"><i class="ti ti-receipt-2"></i></div>
+          <p>Upload foto atau file bukti transfer</p>
+          <small>PDF, JPG, PNG, max 10MB</small>
+          <input type="file" id="fi-bukti" multiple accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileSelect(this,'bukti')">
+        </div>
+        <div class="file-list" id="fl-bukti"></div>
+        <button class="btn btn-purple" style="margin-top:8px;width:100%" onclick="uploadBuktiBayar('${t.id}')">
+          <i class="ti ti-upload" style="font-size:14px"></i> Simpan Bukti Pembayaran
+        </button>
+      </div>`;
+    }
+    html += `</div>`;
+    return html;
+  }
+
+  return '';
+}
+
+// ── Action helpers ─────────────────────────────────────────
+async function doAction(id, patch, histMsg, logMsg) {
+  await updateTrx(id, patch, histMsg, logMsg);
+  closeModal();
+}
+
+async function doRevisi(id) {
+  const catatan = document.getElementById('catatan-revisi')?.value.trim();
+  if (!catatan) { showToast('Tulis catatan revisi terlebih dahulu','ti-alert-triangle'); return; }
+  await updateTrx(id, {status:'pengajuan', catatanRevisi:catatan}, 'Berkas dikembalikan: '+catatan, '🔄 '+id+' dikembalikan untuk revisi');
+  closeModal();
+}
+
+async function doMaker(id) {
+  const mkr = 'MKR-2025-' + String(Math.floor(Math.random()*9000)+1000);
+  await updateTrx(id, {status:'releaser',makerId:mkr}, 'Maker '+mkr+' dibuat dan diapprove','🔐 '+id+' | Maker '+mkr+' diapprove. Menunggu Releaser BOD.');
+  closeModal();
+}
+
+async function doReleaser(id) {
+  const t = trxs.find(x=>x.id===id);
+  const bt  = 'BT-2025-' + String(Math.floor(Math.random()*9000)+1000);
+  const net = t?.pajak?.nominalNet || t?.nominal || 0;
+  const msg = `✅ SELESAI\n├ ID: ${id}\n├ Vendor: ${t?.vendor}\n├ Bruto: ${fmt(t?.nominal)}\n├ Pajak: ${fmt(t?.pajak?.nominalPajak||0)}\n├ Net: ${fmt(net)}\n├ Bukti: ${bt}\n└ Status: LUNAS 🎉`;
+  await updateTrx(id, {status:'bukti',buktNo:bt,tgSent:true}, 'Transaksi dieksekusi BOD, bukti '+bt+' diterbitkan', msg);
+  closeModal();
+}
+
+function sendBODReminder(id, name, net, mkr) {
+  addLog(`🔔 REMINDER BOD — ${id} | ${name} | Net: ${net} | Maker: ${mkr} | Mohon segera dieksekusi.`);
+  showToast('Notifikasi terkirim ke BOD','ti-brand-telegram');
+}
+
+// ── Pajak UI (inline dalam action area) ───────────────────
+let _pajakState = {type:'pph23', rate:2, grossUp:false, hasPajak:null};
+
+function setPajakChoice(ada, trxId) {
+  _pajakState.hasPajak = ada;
+  const area = document.getElementById('pajak-action');
+  if (!ada) {
+    area.innerHTML = `<button class="btn btn-success" onclick="doAction('${trxId}',{status:'maker',pajak:null},'Bebas pajak, lanjut ke Maker','TRX ${trxId} bebas pajak → Maker')">
+      <i class="ti ti-arrow-right" style="font-size:14px"></i> Lanjut ke Maker (Bebas Pajak)
+    </button>`;
+    return;
+  }
+  renderPajakForm(trxId);
+}
+
+function renderPajakForm(trxId) {
+  const t = trxs.find(x=>x.id===trxId);
+  const base = t?.nominal || 0;
+  const selPajak = PAJAK_TYPES.find(p=>p.id===_pajakState.type) || PAJAK_TYPES[0];
+  let nominalPajak=0, nominalNet=0, nominalGross=0;
+  if (_pajakState.grossUp) {
+    nominalGross = Math.round(base/(1-_pajakState.rate/100));
+    nominalPajak = nominalGross-base;
+    nominalNet   = base;
+  } else {
+    nominalPajak = Math.round(base*(_pajakState.rate/100));
+    nominalNet   = base-nominalPajak;
+    nominalGross = base;
+  }
+
+  const area = document.getElementById('pajak-action');
+  area.innerHTML = `
+    <div class="tax-box" style="margin-bottom:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div>
+          <label class="slbl">Jenis Pajak</label>
+          <select class="fld" id="pj-type" onchange="onPajakTypeChange('${trxId}')">
+            ${PAJAK_TYPES.map(p=>`<option value="${p.id}" ${p.id===_pajakState.type?'selected':''}>${p.label}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="slbl">Tarif</label>
+          <select class="fld" id="pj-rate" onchange="_pajakState.rate=Number(this.value);renderPajakForm('${trxId}')">
+            ${selPajak.rates.map(r=>`<option value="${r.r}" ${r.r===_pajakState.rate?'selected':''}>${r.l}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:10px;cursor:pointer">
+        <input type="checkbox" ${_pajakState.grossUp?'checked':''} onchange="_pajakState.grossUp=this.checked;renderPajakForm('${trxId}')">
+        Gross Up (beban pajak ditanggung pemberi kerja)
+      </label>
+      <div class="divider"></div>
+      <div class="tax-row"><span>Nominal Invoice</span><span>${fmt(base)}</span></div>
+      ${_pajakState.grossUp?`<div class="tax-row"><span>Nominal Gross Up</span><span>${fmt(nominalGross)}</span></div>`:''}
+      <div class="tax-row"><span>${selPajak.label} ${_pajakState.rate}%</span><span>${fmt(nominalPajak)}</span></div>
+      <div class="tax-row total"><span>Net Diterima</span><span>${fmt(nominalNet)}</span></div>
+    </div>
+    <button class="btn btn-warn" onclick="submitPajak('${trxId}',${base},${nominalPajak},${nominalNet},${nominalGross})">
+      <i class="ti ti-file-certificate" style="font-size:14px"></i>
+      ${_pajakState.grossUp?'Buat Bukti Potong & Tunggu Revisi Invoice':'Buat Bukti Potong & Lanjut Maker'}
+    </button>
+    ${_pajakState.grossUp && t?.pajak ? `
+    <button class="btn btn-success" style="margin-top:6px" onclick="doAction('${trxId}',{status:'maker'},'Invoice revisi diterima, lanjut ke Maker','✅ ${trxId} invoice revisi diterima')">
+      <i class="ti ti-check" style="font-size:14px"></i> Invoice Revisi Diterima, Lanjut Maker
+    </button>` : ''}
+  `;
+}
+
+function onPajakTypeChange(trxId) {
+  const typeId = document.getElementById('pj-type').value;
+  _pajakState.type = typeId;
+  const pt = PAJAK_TYPES.find(p=>p.id===typeId);
+  _pajakState.rate = pt.rates[0].r;
+  renderPajakForm(trxId);
+}
+
+async function submitPajak(trxId, base, nominalPajak, nominalNet, nominalGross) {
+  const bp = 'BP-2025-' + String(Math.floor(Math.random()*9000)+1000);
+  const selPajak = PAJAK_TYPES.find(p=>p.id===_pajakState.type);
+  const pajakData = {
+    type:_pajakState.type, typeLabel:selPajak.label,
+    rate:_pajakState.rate, grossUp:_pajakState.grossUp,
+    nominalPajak, nominalNet, buktiPotong:bp
+  };
+  if (_pajakState.grossUp) {
+    await updateTrx(trxId,{status:'verifikasi_pajak',pajak:pajakData},'Bukti potong '+bp+' terbit, menunggu revisi invoice vendor','📄 '+trxId+' | Bukti potong '+bp+' terbit. Menunggu revisi invoice (gross up).');
+  } else {
+    await updateTrx(trxId,{status:'maker',pajak:pajakData},'Pajak dihitung, bukti potong '+bp+' terbit, lanjut Maker','📄 '+trxId+' | '+selPajak.label+' '+_pajakState.rate+'% = '+fmt(nominalPajak)+'. Net: '+fmt(nominalNet)+'. Bukti: '+bp);
+  }
+  closeModal();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  FILE UPLOAD
+// ═══════════════════════════════════════════════════════════
+function handleFileSelect(input, key) {
+  if (!window._pendingFiles) window._pendingFiles = {};
+  if (!window._pendingFiles[key]) window._pendingFiles[key] = [];
+  Array.from(input.files).forEach(f => {
+    window._pendingFiles[key].push({file:f, name:f.name});
+  });
+  renderPendingFiles(key);
+}
+
+function handleDrop(e, key) {
+  e.preventDefault();
+  document.getElementById('uz-'+key)?.classList.remove('drag');
+  if (!window._pendingFiles) window._pendingFiles = {};
+  if (!window._pendingFiles[key]) window._pendingFiles[key] = [];
+  Array.from(e.dataTransfer.files).forEach(f => {
+    window._pendingFiles[key].push({file:f, name:f.name});
+  });
+  renderPendingFiles(key);
+}
+
+function renderPendingFiles(key) {
+  const container = document.getElementById('fl-'+key);
+  if (!container) return;
+  const files = window._pendingFiles?.[key] || [];
+  container.innerHTML = files.map((f,i) => `
+    <div class="file-item">
+      <i class="ti ti-file" style="font-size:13px;color:var(--txt3)"></i>
+      <span class="fi-name">${esc(f.name)}</span>
+      <button onclick="removePendingFile('${key}',${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;flex-shrink:0">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>`).join('');
+}
+
+function removePendingFile(key, idx) {
+  if (window._pendingFiles?.[key]) {
+    window._pendingFiles[key].splice(idx, 1);
+    renderPendingFiles(key);
+  }
+}
+
+async function uploadFileToDrive(trxId, file, category) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target.result.split(',')[1];
+      try {
+        const res = await apiPost({
+          action:'uploadFile', trxId, category,
+          fileName:file.name, mimeType:file.type||'application/octet-stream',
+          base64, uploadedBy:currentUser.name
+        });
+        resolve(res);
+      } catch(err) { resolve({ok:false}); }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadBuktiBayar(trxId) {
+  const files = window._pendingFiles?.bukti || [];
+  if (files.length === 0) { showToast('Pilih file terlebih dahulu','ti-alert-triangle'); return; }
+  showLoader('Mengupload bukti pembayaran...');
+  for (const f of files) {
+    await uploadFileToDrive(trxId, f.file, 'bukti_bayar');
+  }
+  showToast('Bukti pembayaran berhasil diupload','ti-receipt');
+  addLog('📎 Bukti pembayaran diupload untuk ' + trxId);
+  hideLoader();
+  closeModal();
+  await openTrxModal(trxId);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  REPORT MODAL
+// ═══════════════════════════════════════════════════════════
+function showReport() {
+  if (!can('report')) return;
+  const total    = trxs.length;
+  const selesai  = trxs.filter(t=>t.status==='bukti').length;
+  const totBruto = trxs.reduce((s,t)=>s+t.nominal,0);
+  const totPajak = trxs.reduce((s,t)=>s+(t.pajak?.nominalPajak||0),0);
+
+  const html = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:var(--green-bg)"><i class="ti ti-chart-bar" style="font-size:16px;color:var(--green)"></i></div>
+        <div><h2>Laporan Transaksi</h2><p>Ringkasan semua transaksi dalam sistem</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="row2 section" style="gap:10px">
+          ${[['Total Transaksi',total,'var(--blue)'],['Selesai',selesai,'var(--green)'],['Total Bruto',fmt(totBruto),'var(--orange)'],['Total Pajak',fmt(totPajak),'var(--red)']].map(([l,v,c])=>`
+          <div class="report-stat">
+            <div class="rs-lbl" style="color:${c}">${l}</div>
+            <div class="rs-val">${v}</div>
+          </div>`).join('')}
+        </div>
+        <div class="section">
+          <label>Progress per Tahap</label>
+          ${COLS.map(col=>{
+            const cnt = trxs.filter(t=>t.status===col.id).length;
+            const pct = total>0?Math.round(cnt/total*100):0;
+            return `<div style="margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+                <span style="color:var(--txt2)">${col.label}</span>
+                <span style="font-weight:600">${cnt} trx</span>
+              </div>
+              <div class="prog-bar-wrap"><div class="prog-bar" style="width:${pct}%;background:${col.acc}"></div></div>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="section">
+          <label>Semua Transaksi</label>
+          ${trxs.map(t=>{
+            const tc=COLS.find(c=>c.id===t.status);
+            const net=t.pajak?.nominalNet||t.nominal;
+            return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--txt3);min-width:60px">${t.id}</span>
+              <span style="flex:1;font-size:12.5px">${esc(t.name)}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--txt2)">${fmt(net)}</span>
+              <span style="font-size:10px;padding:2px 7px;border-radius:4px;background:${tc.bg};color:${tc.fg};font-weight:600;white-space:nowrap">${tc.label.split(' ').slice(0,2).join(' ')}</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('modal-area').innerHTML = html;
+}
+
+function closeModal() {
+  document.getElementById('modal-area').innerHTML = '';
+  window._pendingFiles = {};
+}
+</script>
+</body>
+</html>
