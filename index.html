@@ -348,7 +348,7 @@ select.fld option{background:var(--bg3)}
 // ════════════════════════════════════════════════════════════
 //  CONFIG — GANTI URL INI dengan URL Web App dari Apps Script
 // ════════════════════════════════════════════════════════════
-const API = 'https://script.google.com/macros/library/d/1iMPiwHQvIukGPWNIxc0XM9K4CEld74e_zM8YSUKIj8lGg8fE8WC1Wzjx/2';
+const API = 'https://script.google.com/macros/s/AKfycbxb0bUxkWGda81Y9Aq0L9oxjmX9nMr-x90Gxrf9eU40FBEZSaTnoQ9XuwcdPtqxz0ZbTA/exec';
 
 // ── Passwords (edit sesuai kebutuhan) ─────────────────────
 const PASSWORDS = {
@@ -484,12 +484,27 @@ function logout() {
 // ── API calls ──────────────────────────────────────────────
 async function apiGet(params) {
   const qs = new URLSearchParams(params).toString();
-  const res = await fetch(API + '?' + qs);
-  return res.json();
+  // Apps Script redirect: harus follow redirect, pakai mode no-cors tidak bisa baca body
+  // Gunakan fetch biasa, Apps Script akan return JSON langsung
+  const res = await fetch(API + '?' + qs, {
+    method: 'GET',
+    redirect: 'follow',
+  });
+  const text = await res.text();
+  try { return JSON.parse(text); }
+  catch(e) { throw new Error('Response bukan JSON: ' + text.slice(0,200)); }
 }
+
 async function apiPost(body) {
-  const res = await fetch(API, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  return res.json();
+  const res = await fetch(API, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: {'Content-Type': 'text/plain'}, // text/plain hindari preflight CORS
+    body: JSON.stringify(body)
+  });
+  const text = await res.text();
+  try { return JSON.parse(text); }
+  catch(e) { throw new Error('Response bukan JSON: ' + text.slice(0,200)); }
 }
 
 function showLoader(msg='Memuat data...') {
@@ -500,14 +515,25 @@ function hideLoader() { document.getElementById('loader').style.display = 'none'
 
 async function loadAll() {
   showLoader('Memuat data transaksi...');
+  // Selalu render board dulu agar kolom-kolom muncul
+  renderBoard();
+  renderStats();
   try {
     const res = await apiGet({action:'getTrxs'});
-    if (res.ok) trxs = res.data;
-    renderBoard();
-    renderStats();
+    if (res.ok) {
+      trxs = res.data || [];
+      addLog('✅ Data dimuat: ' + trxs.length + ' transaksi');
+    } else {
+      addLog('⚠️ API error: ' + (res.error || 'unknown'));
+      showToast('Peringatan: ' + (res.error || 'Gagal memuat data'), 'ti-alert-triangle');
+    }
   } catch(e) {
-    showToast('Gagal memuat data. Periksa koneksi.','ti-alert-triangle');
+    addLog('❌ Koneksi gagal: ' + e.message);
+    showToast('Gagal konek ke database. Board ditampilkan kosong.', 'ti-alert-triangle');
   }
+  // Render ulang setelah data masuk (atau tetap kosong kalau gagal)
+  renderBoard();
+  renderStats();
   hideLoader();
 }
 
