@@ -320,6 +320,7 @@ select.fld option{background:var(--bg3)}
     <div class="topbar-actions">
       <button class="tb-btn" onclick="loadAll()"><i class="ti ti-refresh" style="font-size:13px"></i> Refresh</button>
       <button class="tb-btn" id="btn-report" onclick="showReport()"><i class="ti ti-chart-bar" style="font-size:13px"></i> Laporan</button>
+      <button class="tb-btn" id="btn-initdb" onclick="confirmInitDB()" style="display:none;border-color:var(--orange);color:var(--orange)"><i class="ti ti-database" style="font-size:13px"></i> Init Database</button>
       <button class="tb-btn" onclick="logout()"><i class="ti ti-logout" style="font-size:13px"></i> Keluar</button>
     </div>
   </div>
@@ -347,7 +348,7 @@ select.fld option{background:var(--bg3)}
 // ════════════════════════════════════════════════════════════
 //  CONFIG — GANTI URL INI dengan URL Web App dari Apps Script
 // ════════════════════════════════════════════════════════════
-const API = 'https://script.google.com/macros/s/AKfycbxb0bUxkWGda81Y9Aq0L9oxjmX9nMr-x90Gxrf9eU40FBEZSaTnoQ9XuwcdPtqxz0ZbTA/exec';
+const API = 'https://script.google.com/macros/library/d/1iMPiwHQvIukGPWNIxc0XM9K4CEld74e_zM8YSUKIj8lGg8fE8WC1Wzjx/2';
 
 // ── Passwords (edit sesuai kebutuhan) ─────────────────────
 const PASSWORDS = {
@@ -425,7 +426,50 @@ function doLogin() {
   document.getElementById('topbar-role').textContent = ROLE_LABELS[role];
   document.getElementById('topbar-name').textContent = '– ' + name;
   if (!can('report')) document.getElementById('btn-report').style.display='none';
+  if (currentUser.role === 'owner') document.getElementById('btn-initdb').style.display='flex';
   loadAll();
+}
+
+function confirmInitDB() {
+  const html = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:var(--orange-bg)"><i class="ti ti-database" style="font-size:16px;color:var(--orange)"></i></div>
+        <div><h2>Inisialisasi Database</h2><p>Setup sheet Google Sheets otomatis</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px;color:var(--txt2);line-height:1.7">
+          Proses ini akan membuat sheet <strong style="color:var(--txt)">Transaksi</strong> dan <strong style="color:var(--txt)">Files</strong> beserta header kolom di Google Sheets secara otomatis.<br><br>
+          Aman dijalankan meski sheet sudah ada — tidak akan menghapus data yang sudah ada.
+        </p>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-warn" onclick="runInitDB()"><i class="ti ti-database" style="font-size:14px"></i> Jalankan Inisialisasi</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('modal-area').innerHTML = html;
+}
+
+async function runInitDB() {
+  closeModal();
+  showLoader('Menginisialisasi database...');
+  try {
+    const res = await apiPost({ action: 'initDB' });
+    if (res.ok) {
+      showToast('✅ Database berhasil diinisialisasi!', 'ti-database');
+      addLog('🗄️ Database diinisialisasi oleh ' + currentUser.name + ' — Sheet Transaksi & Files siap.');
+      await loadAll();
+    } else {
+      showToast('Gagal: ' + res.error, 'ti-alert-triangle');
+    }
+  } catch(e) {
+    showToast('Error koneksi ke Apps Script', 'ti-alert-triangle');
+  }
+  hideLoader();
 }
 
 function logout() {
