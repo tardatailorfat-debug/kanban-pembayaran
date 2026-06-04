@@ -168,6 +168,84 @@ select.fld option{background:var(--bg3)}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+
+/* ── RESPONSIVE MOBILE ─────────────────────────────── */
+@media (max-width: 640px) {
+  body{font-size:14px}
+
+  /* Topbar mobile */
+  .topbar{padding:0 10px;gap:6px;height:48px;overflow-x:auto}
+  .topbar h1{font-size:12px;white-space:nowrap}
+  .topbar-actions{gap:5px;flex-shrink:0}
+  .tb-btn{font-size:11px;padding:4px 8px;gap:3px}
+  .tb-btn span{display:none} /* sembunyikan label teks, tampilkan ikon saja */
+  .role-badge{font-size:9.5px;padding:2px 6px}
+  #topbar-name{display:none}
+
+  /* Stats bar mobile: scroll horizontal, lebih ringkas */
+  .stats-bar{gap:12px;padding:0 10px;height:auto;min-height:32px;flex-wrap:nowrap}
+  .stat-chip{font-size:10.5px}
+
+  /* Board mobile: scroll horizontal */
+  .board-wrap{padding:8px;gap:8px}
+  .col{flex:0 0 85vw;max-width:320px}
+
+  /* Card lebih compact */
+  .card{padding:9px}
+  .card-name{font-size:13px}
+  .card-amount{font-size:13px}
+
+  /* Modal mobile: full screen */
+  .overlay{padding:0;align-items:flex-end}
+  .modal{
+    max-width:100%;width:100%;
+    max-height:92vh;
+    border-radius:16px 16px 0 0;
+    border-bottom:none;
+  }
+  .modal-hdr{padding:14px 16px 12px}
+  .modal-body{padding:12px 16px}
+  .action-area{padding:10px 16px 24px} /* extra bottom untuk safe area */
+
+  /* Form fields mobile: stack semua */
+  .row2{grid-template-columns:1fr}
+  .section{margin-bottom:12px}
+  .fld{font-size:14px;padding:10px 12px}
+  input.fld,select.fld,textarea.fld{font-size:16px} /* cegah zoom otomatis iOS */
+
+  /* Buttons mobile: lebih tinggi untuk mudah diklik */
+  .btn{padding:12px 16px;font-size:14px;min-height:44px}
+  .add-btn{padding:10px;min-height:40px}
+
+  /* Tax form mobile */
+  .tax-box{padding:10px}
+  .tax-row{font-size:13px}
+
+  /* Login card mobile */
+  .login-card{width:100%;max-width:100%;margin:16px;border-radius:12px;padding:28px 20px}
+
+  /* Upload zone mobile */
+  .upload-zone{padding:14px}
+  .upload-zone .uz-ico{font-size:20px;margin-bottom:4px}
+  .upload-zone p{font-size:12px}
+
+  /* Info grid mobile */
+  .info-grid{font-size:12px;gap:4px 10px}
+  .info-grid .v{font-size:11.5px}
+
+  /* History */
+  .hist-text{font-size:12px}
+  .hist-time{font-size:10.5px}
+
+  /* Report stats mobile */
+  .row2.section .report-stat{padding:8px 10px}
+  .report-stat .rs-val{font-size:15px}
+}
+
+@media (max-width: 380px) {
+  .col{flex:0 0 92vw}
+  .modal{max-height:95vh}
+}
 </style>
 </head>
 <body>
@@ -276,7 +354,6 @@ const PAJAK_TYPES = [
 
 const DEPTS = ['Keuangan','Operasional','HRD','IT','Procurement','Umum','Direksi','Produksi','Sales','Marketing'];
 const TIPES = ['Pembelian Barang','Pembelian BBM','Pembayaran Tagihan','Biaya Operasional','Honor/Jasa','Sewa','Lainnya'];
-const BANKS = ['BCA','BRI','BNI','Mandiri','BSI','CIMB','Danamon','Permata','BTN','Lainnya'];
 
 let currentUser = null;
 let trxs = [];
@@ -296,17 +373,21 @@ const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 
 function can(action) {
   const r = currentUser?.role;
-  if (r === 'owner') return true;
+  if (r === 'owner') return true;  // owner bisa semua
   if (action === 'pengajuan') return ['admin_produksi','admin_sales','admin_marketing'].includes(r);
   if (action === 'finance')   return r === 'finance';
   if (action === 'releaser')  return r === 'releaser';
-  if (action === 'report')    return ['owner','finance'].includes(r);
+  if (action === 'report')    return r === 'finance';
   return false;
 }
 
 function isAdmin() {
   const r = currentUser?.role;
   return ['admin_produksi','admin_sales','admin_marketing'].includes(r);
+}
+
+function isOwner() {
+  return currentUser?.role === 'owner';
 }
 
 // ─── Login ──────────────────────────────────────────────────
@@ -324,9 +405,9 @@ function doLogin() {
   document.getElementById('app').style.display = 'flex';
   document.getElementById('topbar-role').textContent = ROLE_LABELS[role];
   document.getElementById('topbar-name').textContent = '– ' + name;
-  if (can('report'))            document.getElementById('btn-report').style.display = 'flex';
-  if (can('report'))            document.getElementById('btn-arsip').style.display = 'flex';
-  if (currentUser.role==='owner') document.getElementById('btn-initdb').style.display = 'flex';
+  if (can('report') || isOwner()) document.getElementById('btn-report').style.display = 'flex';
+  if (can('report') || isOwner()) document.getElementById('btn-arsip').style.display = 'flex';
+  if (isOwner()) document.getElementById('btn-initdb').style.display = 'flex';
   loadAll();
 }
 
@@ -492,6 +573,23 @@ async function updateTrx(id, patch, histMsg) {
 // ════════════════════════════════════════════════════════════
 //  MODAL — TAMBAH PENGAJUAN
 // ════════════════════════════════════════════════════════════
+function onBankChange(key) {
+  const sel = document.getElementById('f-bank');
+  const manual = document.getElementById('f-bank-manual');
+  if (!sel || !manual) return;
+  manual.style.display = sel.value === '__lain__' ? 'block' : 'none';
+  if (sel.value === '__lain__') manual.focus();
+}
+
+function getBankValue() {
+  const sel = document.getElementById('f-bank');
+  if (!sel) return '';
+  if (sel.value === '__lain__') {
+    return (document.getElementById('f-bank-manual')?.value||'').trim();
+  }
+  return sel.value;
+}
+
 function openAddModal() {
   const nextId = 'TRX' + String(trxs.length + 1).padStart(3,'0');
   showFormModal({
@@ -541,7 +639,6 @@ function showFormModal(cfg) {
   const d = cfg;
   const deptOpts = DEPTS.map(x=>`<option${x===d.defaultDept?' selected':''}>${x}</option>`).join('');
   const tipeOpts = TIPES.map(x=>`<option${x===d.defaultTipe?' selected':''}>${x}</option>`).join('');
-  const bankOpts = BANKS.map(x=>`<option${x===d.defaultBank?' selected':''}>${x}</option>`).join('');
   const html = `
   <div class="overlay" onclick="if(event.target===this)closeModal()">
     <div class="modal">
@@ -566,16 +663,25 @@ function showFormModal(cfg) {
         </div>
         <div class="row2 section">
           <div><label>No. Rekening</label><input type="text" class="fld" id="f-rek" value="${esc(d.defaultRek||'')}" placeholder="Nomor rekening"></div>
-          <div><label>Nama Bank</label><select class="fld" id="f-bank">${bankOpts}</select></div>
+          <div>
+            <label>Nama Bank</label>
+            <select class="fld" id="f-bank" onchange="onBankChange('${d.fileKey}')">
+              ${['BCA','BRI','BNI','Mandiri','BSI','CIMB','Danamon','Permata','BTN'].map(b=>`<option value="${b}"${b===(d.defaultBank||'BCA')?' selected':''}>${b}</option>`).join('')}
+              <option value="__lain__"${!['BCA','BRI','BNI','Mandiri','BSI','CIMB','Danamon','Permata','BTN'].includes(d.defaultBank)&&d.defaultBank?' selected':''}>Bank Lain...</option>
+            </select>
+            <input type="text" class="fld" id="f-bank-manual" placeholder="Ketik nama bank..."
+              style="margin-top:6px;display:${!['BCA','BRI','BNI','Mandiri','BSI','CIMB','Danamon','Permata','BTN'].includes(d.defaultBank)&&d.defaultBank?'block':'none'}"
+              value="${!['BCA','BRI','BNI','Mandiri','BSI','CIMB','Danamon','Permata','BTN'].includes(d.defaultBank)&&d.defaultBank?esc(d.defaultBank):''}">
+          </div>
         </div>
         <div class="section"><label>NPWP / NIK</label><input type="text" class="fld" id="f-npwp" value="${esc(d.defaultNpwp||'')}" placeholder="Nomor NPWP atau NIK"></div>
-        <div class="section"><label>Nominal (Rp)</label><input type="text" class="fld" id="f-nominal" value="${d.defaultNominal||''}" placeholder="Contoh: 5000000"></div>
+        <div class="section"><label>Nominal (Rp)</label><input type="text" class="fld" id="f-nominal" value="${d.defaultNominal||''}" placeholder="Contoh: 5000000" inputmode="numeric"></div>
         <div class="section"><label>Deskripsi / Keterangan</label><textarea class="fld" id="f-desk" placeholder="Uraian singkat...">${esc(d.defaultDesk||'')}</textarea></div>
         <div class="section">
           <label>Lampiran Dokumen</label>
           <div class="upload-zone" id="uz-${d.fileKey}" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event,'${d.fileKey}')" onclick="document.getElementById('fi-${d.fileKey}').click()">
             <div class="uz-ico"><i class="ti ti-cloud-upload"></i></div>
-            <p>Klik atau seret file ke sini</p>
+            <p>Klik untuk upload file</p>
             <small>PDF, JPG, PNG, max 10MB per file</small>
             <input type="file" id="fi-${d.fileKey}" multiple accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileSelect(this,'${d.fileKey}')">
           </div>
@@ -610,7 +716,7 @@ async function submitAdd() {
     nominal:Number(nominal),
     deskripsi:document.getElementById('f-desk').value,
     noRekening:document.getElementById('f-rek').value,
-    namaBank:document.getElementById('f-bank').value,
+    namaBank:getBankValue(),
     npwpNik:document.getElementById('f-npwp').value,
   };
   showLoader('Menyimpan pengajuan...');
@@ -645,7 +751,7 @@ async function submitEdit() {
     nominal:Number(nominal),
     deskripsi:document.getElementById('f-desk').value,
     noRekening:document.getElementById('f-rek').value,
-    namaBank:document.getElementById('f-bank').value,
+    namaBank:getBankValue(),
     npwpNik:document.getElementById('f-npwp').value,
     editedBy:currentUser.name,
   };
@@ -761,43 +867,38 @@ async function openTrxModal(id) {
 
 // ─── Action HTML per status ──────────────────────────────────
 function buildActionHTML(t) {
-  // PENGAJUAN
+  const owner = isOwner();
+
+  // PENGAJUAN — Admin + Owner: edit & kirim. Finance + Owner: kirim saja
   if (t.status === 'pengajuan') {
-    const adminCanAct = isAdmin() || currentUser?.role === 'owner';
-    const financeCanAct = can('finance');
-    if (!adminCanAct && !financeCanAct) return '';
+    const adminAct   = isAdmin() || owner;
+    const financeAct = can('finance');
+    if (!adminAct && !financeAct) return '';
     let html = `<div class="action-area">`;
-    // Admin: edit + kirim ke verifikasi
-    if (adminCanAct) {
+    if (adminAct) {
       html += `
         <button class="btn btn-warn" onclick="openEditModal('${t.id}')">
           <i class="ti ti-edit" style="font-size:14px"></i> Edit Berkas Pengajuan
+        </button>`;
+    }
+    html += `
+        <button class="btn btn-primary" onclick="doAction('${t.id}',{status:'verifikasi_berkas',catatanRevisi:''},'Berkas dikirim ke Verifikasi Berkas oleh ${esc(currentUser.name)}')">
+          <i class="ti ti-send" style="font-size:14px"></i> Kirim ke Verifikasi Berkas
         </button>
-        <button class="btn btn-primary" onclick="doAction('${t.id}',{status:'verifikasi_berkas',catatanRevisi:''},'Berkas dikirim ke Verifikasi Berkas oleh ${esc(currentUser.name)}')">
-          <i class="ti ti-send" style="font-size:14px"></i> Kirim ke Verifikasi Berkas
-        </button>`;
-    }
-    // Finance juga bisa push
-    if (financeCanAct && !adminCanAct) {
-      html += `
-        <button class="btn btn-primary" onclick="doAction('${t.id}',{status:'verifikasi_berkas',catatanRevisi:''},'Berkas dikirim ke Verifikasi Berkas oleh ${esc(currentUser.name)}')">
-          <i class="ti ti-send" style="font-size:14px"></i> Kirim ke Verifikasi Berkas
-        </button>`;
-    }
-    html += `</div>`;
+      </div>`;
     return html;
   }
 
-  // VERIFIKASI BERKAS
+  // VERIFIKASI BERKAS — Finance + Owner
   if (t.status === 'verifikasi_berkas') {
-    if (!can('finance')) return '';
+    if (!can('finance') && !owner) return '';
     return `<div class="action-area">
       <button class="btn btn-success" onclick="doAction('${t.id}',{status:'verifikasi_pajak'},'Berkas dinyatakan lengkap dan valid')">
         <i class="ti ti-circle-check" style="font-size:14px"></i> Berkas Lengkap
       </button>
       <div>
         <label style="font-size:10.5px;color:var(--txt3);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:block">Catatan Revisi (jika dikembalikan)</label>
-        <textarea class="fld" id="catatan-revisi" placeholder="Tulis catatan untuk pengaju..." style="min-height:50px"></textarea>
+        <textarea class="fld" id="catatan-revisi" placeholder="Tulis catatan untuk pengaju..." style="min-height:50px;width:100%"></textarea>
       </div>
       <button class="btn btn-danger" onclick="doRevisi('${t.id}')">
         <i class="ti ti-arrow-back" style="font-size:14px"></i> Kembalikan untuk Revisi
@@ -805,9 +906,9 @@ function buildActionHTML(t) {
     </div>`;
   }
 
-  // VERIFIKASI PAJAK
+  // VERIFIKASI PAJAK — Finance + Owner
   if (t.status === 'verifikasi_pajak') {
-    if (!can('finance')) return '';
+    if (!can('finance') && !owner) return '';
     return `<div class="action-area" id="pajak-action">
       <div style="display:flex;gap:8px">
         <button class="btn btn-success" style="flex:1" onclick="setPajakChoice(false,'${t.id}')">
@@ -820,9 +921,9 @@ function buildActionHTML(t) {
     </div>`;
   }
 
-  // MAKER
+  // MAKER — Finance + Owner
   if (t.status === 'maker') {
-    if (!can('finance')) return '';
+    if (!can('finance') && !owner) return '';
     return `<div class="action-area">
       <button class="btn btn-success" onclick="doMaker('${t.id}')">
         <i class="ti ti-user-check" style="font-size:14px"></i> Buat & Approve Maker Transaksi
@@ -830,10 +931,9 @@ function buildActionHTML(t) {
     </div>`;
   }
 
-  // RELEASER
+  // RELEASER — Releaser BOD + Owner
   if (t.status === 'releaser') {
-    if (!can('releaser')) return '';
-    const net = t.pajak?.nominalNet || t.nominal;
+    if (!can('releaser') && !owner) return '';
     return `<div class="action-area">
       <button class="btn btn-teal" onclick="doReleaser('${t.id}')">
         <i class="ti ti-player-play" style="font-size:14px"></i> Tandai Sudah Dieksekusi BOD
@@ -841,7 +941,7 @@ function buildActionHTML(t) {
     </div>`;
   }
 
-  // BUKTI
+  // BUKTI — Finance + Owner upload; semua bisa lihat
   if (t.status === 'bukti') {
     let html = `<div class="action-area">
       <div style="padding:10px 12px;background:var(--green-bg);border-radius:var(--radius);border:1px solid rgba(63,185,80,.3)">
@@ -850,13 +950,13 @@ function buildActionHTML(t) {
           <span style="font-size:13px;font-weight:600;color:var(--green)">${esc(t.buktNo||'Selesai')}</span>
         </div>
       </div>`;
-    if (can('finance')) {
+    if (can('finance') || owner) {
       html += `
       <div>
         <label style="font-size:10.5px;color:var(--txt3);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:block">Upload Bukti Pembayaran</label>
         <div class="upload-zone" id="uz-bukti" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event,'bukti')" onclick="document.getElementById('fi-bukti').click()">
           <div class="uz-ico"><i class="ti ti-receipt-2"></i></div>
-          <p>Upload foto atau file bukti transfer</p>
+          <p>Klik untuk upload bukti transfer</p>
           <small>PDF, JPG, PNG, max 10MB</small>
           <input type="file" id="fi-bukti" multiple accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileSelect(this,'bukti')">
         </div>
