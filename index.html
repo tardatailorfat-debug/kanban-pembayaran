@@ -23,7 +23,7 @@
   --radius:8px;--radius-lg:12px;
   --shadow:0 8px 32px rgba(0,0,0,.5);
 }
-body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;font-size:13px;overflow:hidden}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100dvh;font-size:13px;overflow:hidden}
 
 /* LOGIN */
 #login-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:1000;background-image:radial-gradient(ellipse at 20% 50%,rgba(56,139,253,.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(240,136,62,.05) 0%,transparent 40%)}
@@ -41,7 +41,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .login-err{font-size:12px;color:var(--red);margin-top:8px;text-align:center;min-height:18px}
 
 /* APP LAYOUT */
-.app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.app{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
 .topbar{background:var(--bg2);border-bottom:1px solid var(--bdr);padding:0 16px;display:flex;align-items:center;gap:12px;height:50px;flex-shrink:0}
 .topbar-logo{display:flex;align-items:center;gap:8px}
 .topbar-logo .tl-ico{width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center}
@@ -58,11 +58,11 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .stat-chip strong{color:var(--txt);font-weight:600}
 
 /* BOARD */
-.board-wrap{display:flex;flex:1;overflow:hidden;padding:12px;gap:10px;overflow-x:auto}
+.board-wrap{display:flex;flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;padding:12px;gap:10px}
 .board-wrap::-webkit-scrollbar{height:5px}
 .board-wrap::-webkit-scrollbar-track{background:var(--bg)}
 .board-wrap::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
-.col{flex:0 0 230px;display:flex;flex-direction:column;background:var(--bg2);border-radius:10px;overflow:hidden;border:1px solid var(--bdr)}
+.col{flex:0 0 230px;display:flex;flex-direction:column;background:var(--bg2);border-radius:10px;overflow:hidden;border:1px solid var(--bdr);min-height:0}
 .col-hdr{padding:10px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--bdr);background:var(--bg3)}
 .col-hdr .ico{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center}
 .col-hdr .label{font-size:11.5px;font-weight:600;flex:1;color:var(--txt)}
@@ -174,77 +174,76 @@ select.fld option{background:var(--bg3)}
   body{font-size:14px}
 
   /* Topbar mobile */
-  .topbar{padding:0 10px;gap:6px;height:48px;overflow-x:auto}
-  .topbar h1{font-size:12px;white-space:nowrap}
-  .topbar-actions{gap:5px;flex-shrink:0}
-  .tb-btn{font-size:11px;padding:4px 8px;gap:3px}
-  .tb-btn span{display:none} /* sembunyikan label teks, tampilkan ikon saja */
-  .role-badge{font-size:9.5px;padding:2px 6px}
+  .topbar{padding:0 10px;gap:6px;height:46px;flex-shrink:0}
+  .topbar h1{font-size:11.5px;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis}
+  .topbar-actions{gap:4px;flex-shrink:0}
+  .tb-btn{font-size:0;padding:6px 8px;gap:0;min-width:32px;min-height:32px;justify-content:center}
+  .tb-btn i{font-size:15px!important}
+  .role-badge{font-size:9px;padding:2px 5px;flex-shrink:0}
   #topbar-name{display:none}
 
-  /* Stats bar mobile: scroll horizontal, lebih ringkas */
-  .stats-bar{gap:12px;padding:0 10px;height:auto;min-height:32px;flex-wrap:nowrap}
-  .stat-chip{font-size:10.5px}
+  /* Stats bar */
+  .stats-bar{gap:10px;padding:0 10px;height:30px;flex-shrink:0}
+  .stat-chip{font-size:10px}
+  .stat-chip span:not(strong){display:none}
 
-  /* Board mobile: scroll horizontal */
-  .board-wrap{padding:8px;gap:8px}
-  .col{flex:0 0 85vw;max-width:320px}
+  /* Board: kolom scroll horizontal, tinggi mengisi sisa layar */
+  .board-wrap{padding:8px;gap:8px;align-items:stretch}
+  .col{flex:0 0 80vw;max-width:300px}
+  .cards{flex:1;min-height:0;overflow-y:auto}
 
-  /* Card lebih compact */
-  .card{padding:9px}
+  /* Card */
+  .card{padding:10px}
   .card-name{font-size:13px}
   .card-amount{font-size:13px}
 
-  /* Modal mobile: full screen */
+  /* Modal mobile: slide dari bawah */
   .overlay{padding:0;align-items:flex-end}
   .modal{
-    max-width:100%;width:100%;
-    max-height:92vh;
+    max-width:100%;
+    width:100%;
+    max-height:90dvh;
     border-radius:16px 16px 0 0;
     border-bottom:none;
   }
   .modal-hdr{padding:14px 16px 12px}
   .modal-body{padding:12px 16px}
-  .action-area{padding:10px 16px 24px} /* extra bottom untuk safe area */
+  .action-area{padding:10px 16px env(safe-area-inset-bottom,16px)}
 
-  /* Form fields mobile: stack semua */
+  /* Form: semua field jadi 1 kolom */
   .row2{grid-template-columns:1fr}
   .section{margin-bottom:12px}
-  .fld{font-size:14px;padding:10px 12px}
-  input.fld,select.fld,textarea.fld{font-size:16px} /* cegah zoom otomatis iOS */
+  input.fld,select.fld,textarea.fld{font-size:16px!important} /* cegah zoom iOS */
 
-  /* Buttons mobile: lebih tinggi untuk mudah diklik */
-  .btn{padding:12px 16px;font-size:14px;min-height:44px}
-  .add-btn{padding:10px;min-height:40px}
+  /* Buttons: touch-friendly */
+  .btn{min-height:48px;font-size:14px;padding:12px 16px}
+  .add-btn{min-height:44px;padding:10px}
 
-  /* Tax form mobile */
+  /* Tax form */
   .tax-box{padding:10px}
   .tax-row{font-size:13px}
 
-  /* Login card mobile */
-  .login-card{width:100%;max-width:100%;margin:16px;border-radius:12px;padding:28px 20px}
+  /* Login card */
+  .login-card{width:calc(100% - 32px);max-width:400px;padding:24px 20px;border-radius:12px}
 
-  /* Upload zone mobile */
+  /* Upload */
   .upload-zone{padding:14px}
   .upload-zone .uz-ico{font-size:20px;margin-bottom:4px}
-  .upload-zone p{font-size:12px}
 
-  /* Info grid mobile */
-  .info-grid{font-size:12px;gap:4px 10px}
+  /* Info grid */
+  .info-grid{font-size:12px}
   .info-grid .v{font-size:11.5px}
 
   /* History */
   .hist-text{font-size:12px}
   .hist-time{font-size:10.5px}
 
-  /* Report stats mobile */
-  .row2.section .report-stat{padding:8px 10px}
+  /* Report */
   .report-stat .rs-val{font-size:15px}
 }
 
 @media (max-width: 380px) {
-  .col{flex:0 0 92vw}
-  .modal{max-height:95vh}
+  .col{flex:0 0 88vw}
 }
 </style>
 </head>
@@ -359,6 +358,26 @@ let currentUser = null;
 let trxs = [];
 let toastTimer = null;
 
+// ─── Session persistence ─────────────────────────────────────
+function saveSession(user) {
+  try { sessionStorage.setItem('kp_user', JSON.stringify(user)); } catch(e) {}
+}
+function loadSession() {
+  try { return JSON.parse(sessionStorage.getItem('kp_user')||'null'); } catch(e) { return null; }
+}
+function clearSession() {
+  try { sessionStorage.removeItem('kp_user'); } catch(e) {}
+}
+
+// Auto-restore session on page load
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = loadSession();
+  if (saved && saved.role && saved.name && PASSWORDS[saved.role]) {
+    currentUser = saved;
+    enterApp(saved);
+  }
+});
+
 // ─── Helpers ────────────────────────────────────────────────
 const fmt  = n => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0}).format(n);
 const fmtD = d => {
@@ -391,28 +410,38 @@ function isOwner() {
 }
 
 // ─── Login ──────────────────────────────────────────────────
-function doLogin() {
-  const role = document.getElementById('ls-role').value;
-  const name = document.getElementById('ls-name').value.trim();
-  const pass = document.getElementById('ls-pass').value;
-  const errEl = document.getElementById('ls-err');
-  errEl.textContent = '';
-  if (!role) { errEl.textContent = 'Pilih role terlebih dahulu.'; return; }
-  if (!name) { errEl.textContent = 'Masukkan nama Anda.'; return; }
-  if (pass !== PASSWORDS[role]) { errEl.textContent = 'Password salah.'; return; }
-  currentUser = {role, name};
+function enterApp(user) {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
-  document.getElementById('topbar-role').textContent = ROLE_LABELS[role];
-  document.getElementById('topbar-name').textContent = '– ' + name;
+  document.getElementById('topbar-role').textContent = ROLE_LABELS[user.role];
+  document.getElementById('topbar-name').textContent = '– ' + user.name;
+  // reset button visibility first
+  ['btn-report','btn-arsip','btn-initdb'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
   if (can('report') || isOwner()) document.getElementById('btn-report').style.display = 'flex';
   if (can('report') || isOwner()) document.getElementById('btn-arsip').style.display = 'flex';
   if (isOwner()) document.getElementById('btn-initdb').style.display = 'flex';
   loadAll();
 }
 
+function doLogin() {
+  const role  = document.getElementById('ls-role').value;
+  const name  = document.getElementById('ls-name').value.trim();
+  const pass  = document.getElementById('ls-pass').value;
+  const errEl = document.getElementById('ls-err');
+  errEl.textContent = '';
+  if (!role) { errEl.textContent = 'Pilih role terlebih dahulu.'; return; }
+  if (!name) { errEl.textContent = 'Masukkan nama Anda.'; return; }
+  if (pass !== PASSWORDS[role]) { errEl.textContent = 'Password salah.'; return; }
+  currentUser = {role, name};
+  saveSession(currentUser);
+  enterApp(currentUser);
+}
+
 function logout() {
   currentUser = null; trxs = [];
+  clearSession();
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('ls-pass').value = '';
@@ -770,22 +799,13 @@ async function submitEdit() {
 }
 
 // ════════════════════════════════════════════════════════════
-//  MODAL — DETAIL TRX
+//  MODAL — DETAIL TRX (buka instan, file lazy-load)
 // ════════════════════════════════════════════════════════════
-async function openTrxModal(id) {
+function openTrxModal(id) {
   const t = trxs.find(x=>x.id===id);
   if (!t) return;
-  const col = COLS.find(c=>c.id===t.status);
-  let files = [];
-  try {
-    const res = await apiGet({action:'getFiles', trxId:id});
-    if (res.ok) files = res.data;
-  } catch(e){}
-
+  const col  = COLS.find(c=>c.id===t.status);
   const pajak = t.pajak;
-  const net   = pajak?.nominalNet != null ? pajak.nominalNet : t.nominal;
-  const lampiranFiles   = files.filter(f=>f.category==='lampiran_pengajuan');
-  const buktiBayarFiles = files.filter(f=>f.category==='bukti_bayar');
 
   const html = `
   <div class="overlay" onclick="if(event.target===this)closeModal()">
@@ -819,7 +839,7 @@ async function openTrxModal(id) {
         <div class="section">
           <label>Detail Pajak</label>
           <div class="tax-box">
-            <div class="tax-row"><span>Jenis</span><span>${esc(pajak.typeLabel)} ${pajak.rate}%</span></div>
+            <div class="tax-row"><span>Jenis</span><span>${pajak.manual?'Manual':esc(pajak.typeLabel)+' '+pajak.rate+'%'}</span></div>
             <div class="tax-row"><span>Gross Up</span><span>${pajak.grossUp?'Ya':'Tidak'}</span></div>
             <div class="tax-row"><span>Nominal Pajak</span><span>${fmt(pajak.nominalPajak)}</span></div>
             <div class="tax-row total"><span>Net Dibayar</span><span>${fmt(pajak.nominalNet)}</span></div>
@@ -828,30 +848,18 @@ async function openTrxModal(id) {
         </div>`:''}
         ${t.makerId?`<div class="section"><label>Nomor Maker</label><div class="fld" style="font-family:'JetBrains Mono',monospace;font-size:12px">${esc(t.makerId)}</div></div>`:''}
         ${t.buktNo?`<div class="section"><label>Nomor Bukti Transaksi</label><div class="fld" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--green)">${esc(t.buktNo)}</div></div>`:''}
-        ${lampiranFiles.length>0?`
+
+        <!-- Lampiran: lazy load -->
         <div class="section">
-          <label>Lampiran Dokumen</label>
-          <div class="file-list">${lampiranFiles.map(f=>`
-            <div class="file-item">
-              <i class="ti ti-paperclip" style="font-size:13px;color:var(--txt3)"></i>
-              <span class="fi-name">${esc(f.fileName)}</span>
-              <span class="fi-cat">Lampiran</span>
-              <a href="${f.driveUrl}" target="_blank"><i class="ti ti-external-link" style="font-size:12px"></i> Buka</a>
-            </div>`).join('')}
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <label style="margin-bottom:0">Lampiran & Bukti</label>
+            <button class="tb-btn" onclick="loadFilesModal('${id}')" style="font-size:11px;padding:3px 8px">
+              <i class="ti ti-paperclip" style="font-size:11px"></i> Lihat File
+            </button>
           </div>
-        </div>`:''}
-        ${buktiBayarFiles.length>0?`
-        <div class="section">
-          <label>Bukti Pembayaran</label>
-          <div class="file-list">${buktiBayarFiles.map(f=>`
-            <div class="file-item">
-              <i class="ti ti-receipt" style="font-size:13px;color:var(--green)"></i>
-              <span class="fi-name">${esc(f.fileName)}</span>
-              <span class="fi-cat" style="background:var(--green-bg);color:var(--green)">Bukti</span>
-              <a href="${f.driveUrl}" target="_blank"><i class="ti ti-external-link" style="font-size:12px"></i> Buka</a>
-            </div>`).join('')}
-          </div>
-        </div>`:''}
+          <div id="files-container-${id}" style="font-size:12px;color:var(--txt3)">Klik "Lihat File" untuk memuat lampiran</div>
+        </div>
+
         <div class="section">
           <label>Riwayat</label>
           ${renderHistory(t.history)}
@@ -863,6 +871,28 @@ async function openTrxModal(id) {
   document.getElementById('modal-area').innerHTML = html;
   window._pendingFiles = window._pendingFiles || {};
   window._currentTrxId = id;
+}
+
+// Lazy load files — dipanggil hanya saat user klik "Lihat File"
+async function loadFilesModal(trxId) {
+  const container = document.getElementById('files-container-'+trxId);
+  if (!container) return;
+  container.innerHTML = '<span style="color:var(--txt3);font-size:12px">Memuat file...</span>';
+  try {
+    const res = await apiGet({action:'getFiles', trxId});
+    const files = res.ok ? res.data : [];
+    const lampiran  = files.filter(f=>f.category==='lampiran_pengajuan');
+    const buktiBayar= files.filter(f=>f.category==='bukti_bayar');
+    if (files.length===0) { container.innerHTML='<span style="color:var(--txt3);font-size:12px">Belum ada file.</span>'; return; }
+    container.innerHTML = [
+      lampiran.length>0 ? `<div style="font-size:10px;color:var(--txt3);font-weight:700;text-transform:uppercase;margin-bottom:4px">Lampiran</div>`+
+        lampiran.map(f=>`<div class="file-item"><i class="ti ti-paperclip" style="font-size:13px;color:var(--txt3)"></i><span class="fi-name">${esc(f.fileName)}</span><span class="fi-cat">Lampiran</span><a href="${f.driveUrl}" target="_blank"><i class="ti ti-external-link" style="font-size:12px"></i> Buka</a></div>`).join('') : '',
+      buktiBayar.length>0 ? `<div style="font-size:10px;color:var(--txt3);font-weight:700;text-transform:uppercase;margin:8px 0 4px">Bukti Bayar</div>`+
+        buktiBayar.map(f=>`<div class="file-item"><i class="ti ti-receipt" style="font-size:13px;color:var(--green)"></i><span class="fi-name">${esc(f.fileName)}</span><span class="fi-cat" style="background:var(--green-bg);color:var(--green)">Bukti</span><a href="${f.driveUrl}" target="_blank"><i class="ti ti-external-link" style="font-size:12px"></i> Buka</a></div>`).join('') : '',
+    ].join('');
+  } catch(e) {
+    container.innerHTML='<span style="color:var(--red);font-size:12px">Gagal memuat file.</span>';
+  }
 }
 
 // ─── Action HTML per status ──────────────────────────────────
@@ -1001,7 +1031,7 @@ async function doReleaser(id) {
 }
 
 // ─── Pajak UI ────────────────────────────────────────────────
-let _pajakState = {type:'pph23', rate:2, grossUp:false};
+let _pajakState = {type:'pph23', rate:2, grossUp:false, mode:'auto'};
 
 function setPajakChoice(ada, trxId) {
   const area = document.getElementById('pajak-action');
@@ -1011,24 +1041,40 @@ function setPajakChoice(ada, trxId) {
     </button>`;
     return;
   }
-  _pajakState = {type:'pph23', rate:2, grossUp:false};
+  _pajakState = {type:'pph23', rate:2, grossUp:false, mode:'auto'};
   renderPajakForm(trxId);
 }
 
 function renderPajakForm(trxId) {
   const t = trxs.find(x=>x.id===trxId);
   const base = t?.nominal || 0;
-  const selPajak = PAJAK_TYPES.find(p=>p.id===_pajakState.type) || PAJAK_TYPES[0];
-  let nominalPajak=0, nominalNet=0, nominalGross=0;
-  if (_pajakState.grossUp) {
-    nominalGross = Math.round(base/(1-_pajakState.rate/100));
-    nominalPajak = nominalGross-base; nominalNet = base;
-  } else {
-    nominalPajak = Math.round(base*(_pajakState.rate/100));
-    nominalNet = base-nominalPajak; nominalGross = base;
-  }
   const area = document.getElementById('pajak-action');
+  const isAuto = _pajakState.mode === 'auto';
+
+  // Hitung nilai otomatis
+  const selPajak = PAJAK_TYPES.find(p=>p.id===_pajakState.type) || PAJAK_TYPES[0];
+  let autoNominalPajak=0, autoNominalNet=0, autoNominalGross=0;
+  if (_pajakState.grossUp) {
+    autoNominalGross = Math.round(base/(1-_pajakState.rate/100));
+    autoNominalPajak = autoNominalGross-base; autoNominalNet = base;
+  } else {
+    autoNominalPajak = Math.round(base*(_pajakState.rate/100));
+    autoNominalNet = base-autoNominalPajak; autoNominalGross = base;
+  }
+
   area.innerHTML = `
+    <!-- Toggle Auto/Manual -->
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <button onclick="_pajakState.mode='auto';renderPajakForm('${trxId}')" style="flex:1;padding:8px;border-radius:6px;border:1.5px solid ${isAuto?'var(--orange)':'var(--bdr)'};background:${isAuto?'var(--orange-bg)':'var(--bg3)'};color:${isAuto?'var(--orange)':'var(--txt2)'};font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">
+        <i class="ti ti-calculator" style="font-size:13px"></i> Hitung Otomatis
+      </button>
+      <button onclick="_pajakState.mode='manual';renderPajakForm('${trxId}')" style="flex:1;padding:8px;border-radius:6px;border:1.5px solid ${!isAuto?'var(--blue)':'var(--bdr)'};background:${!isAuto?'var(--blue-bg)':'var(--bg3)'};color:${!isAuto?'var(--blue)':'var(--txt2)'};font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">
+        <i class="ti ti-pencil" style="font-size:13px"></i> Input Manual
+      </button>
+    </div>
+
+    ${isAuto ? `
+    <!-- MODE OTOMATIS -->
     <div class="tax-box" style="margin-bottom:10px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
         <div>
@@ -1044,28 +1090,62 @@ function renderPajakForm(trxId) {
           </select>
         </div>
       </div>
-      <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:10px;cursor:pointer">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px;cursor:pointer">
         <input type="checkbox" ${_pajakState.grossUp?'checked':''} onchange="_pajakState.grossUp=this.checked;renderPajakForm('${trxId}')">
         Gross Up (beban pajak ditanggung pemberi kerja)
       </label>
       <div class="divider"></div>
       <div class="tax-row"><span>Nominal Invoice</span><span>${fmt(base)}</span></div>
-      ${_pajakState.grossUp?`<div class="tax-row"><span>Nominal Gross Up</span><span>${fmt(nominalGross)}</span></div>`:''}
-      <div class="tax-row"><span>${selPajak.label} ${_pajakState.rate}%</span><span>${fmt(nominalPajak)}</span></div>
-      <div class="tax-row total"><span>Net Diterima</span><span>${fmt(nominalNet)}</span></div>
+      ${_pajakState.grossUp?`<div class="tax-row"><span>Nominal Gross Up</span><span>${fmt(autoNominalGross)}</span></div>`:''}
+      <div class="tax-row"><span>${selPajak.label} ${_pajakState.rate}%</span><span>${fmt(autoNominalPajak)}</span></div>
+      <div class="tax-row total"><span>Net Diterima</span><span>${fmt(autoNominalNet)}</span></div>
     </div>
     <div style="margin-bottom:8px">
       <label class="slbl">Nomor Bukti Potong <span style="color:var(--red)">*</span></label>
       <input type="text" class="fld" id="pj-buktipotong" placeholder="Contoh: BP-2025-0001" style="width:100%">
     </div>
-    <button class="btn btn-warn" onclick="submitPajak('${trxId}',${base},${nominalPajak},${nominalNet},${nominalGross})">
+    <button class="btn btn-warn" onclick="submitPajakAuto('${trxId}',${base},${autoNominalPajak},${autoNominalNet},${autoNominalGross})">
       <i class="ti ti-file-certificate" style="font-size:14px"></i>
-      ${_pajakState.grossUp?'Buat Bukti Potong & Tunggu Revisi Invoice':'Buat Bukti Potong & Lanjut Maker'}
+      ${_pajakState.grossUp?'Buat Bukti Potong & Kembalikan ke Pengajuan':'Buat Bukti Potong & Lanjut Maker'}
     </button>
     ${_pajakState.grossUp && t?.pajak?`
     <button class="btn btn-success" style="margin-top:6px" onclick="doAction('${trxId}',{status:'maker'},'Invoice revisi diterima, lanjut ke Maker')">
       <i class="ti ti-check" style="font-size:14px"></i> Invoice Revisi Diterima, Lanjut Maker
     </button>`:''}
+    ` : `
+    <!-- MODE MANUAL -->
+    <div class="tax-box" style="margin-bottom:10px">
+      <div style="display:grid;gap:8px">
+        <div>
+          <label class="slbl">Nominal Invoice (Rp)</label>
+          <input type="text" class="fld" id="pm-invoice" placeholder="Nominal invoice" inputmode="numeric" style="width:100%">
+        </div>
+        <div>
+          <label class="slbl">Nominal Gross Up (Rp) <span style="color:var(--txt3);font-weight:400;text-transform:none">(isi jika ada)</span></label>
+          <input type="text" class="fld" id="pm-gross" placeholder="Kosongkan jika tidak ada gross up" inputmode="numeric" style="width:100%">
+        </div>
+        <div>
+          <label class="slbl">Nominal Pajak (Rp)</label>
+          <input type="text" class="fld" id="pm-pajak" placeholder="Jumlah pajak yang dipotong" inputmode="numeric" style="width:100%">
+        </div>
+        <div>
+          <label class="slbl">Net Diterima (Rp)</label>
+          <input type="text" class="fld" id="pm-net" placeholder="Jumlah yang diterima vendor" inputmode="numeric" style="width:100%">
+        </div>
+        <div>
+          <label class="slbl">Jenis Pajak <span style="color:var(--txt3);font-weight:400;text-transform:none">(opsional)</span></label>
+          <input type="text" class="fld" id="pm-jenis" placeholder="Contoh: PPh 23, PPN, dll" style="width:100%">
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:8px">
+      <label class="slbl">Nomor Bukti Potong <span style="color:var(--red)">*</span></label>
+      <input type="text" class="fld" id="pj-buktipotong" placeholder="Contoh: BP-2025-0001" style="width:100%">
+    </div>
+    <button class="btn btn-warn" onclick="submitPajakManual('${trxId}')">
+      <i class="ti ti-file-certificate" style="font-size:14px"></i> Simpan & Lanjut Maker
+    </button>
+    `}
   `;
 }
 
@@ -1076,22 +1156,44 @@ function onPajakTypeChange(trxId) {
   renderPajakForm(trxId);
 }
 
-async function submitPajak(trxId, base, nominalPajak, nominalNet, nominalGross) {
+async function submitPajakAuto(trxId, base, nominalPajak, nominalNet, nominalGross) {
   const bp = (document.getElementById('pj-buktipotong')?.value||'').trim();
   if (!bp) { showToast('Isi Nomor Bukti Potong terlebih dahulu','ti-alert-triangle'); return; }
   const selPajak = PAJAK_TYPES.find(p=>p.id===_pajakState.type);
   const pajakData = {
     type:_pajakState.type, typeLabel:selPajak.label,
     rate:_pajakState.rate, grossUp:_pajakState.grossUp,
-    nominalPajak, nominalNet, buktiPotong:bp
+    nominalPajak, nominalNet, buktiPotong:bp, manual:false
   };
   if (_pajakState.grossUp) {
-    await updateTrx(trxId,{status:'verifikasi_pajak',pajak:pajakData},
-      'Bukti potong '+bp+' terbit, menunggu revisi invoice vendor');
+    // FIX 5: gross up → kembalikan ke Pengajuan Dana agar vendor upload invoice revisi
+    await updateTrx(trxId, {status:'pengajuan', pajak:pajakData, catatanRevisi:'Bukti potong '+bp+' telah diterbitkan. Mohon upload invoice revisi sesuai nominal gross up.'},
+      'Bukti potong '+bp+' terbit. Menunggu invoice revisi dari vendor (dikembalikan ke Pengajuan)');
   } else {
-    await updateTrx(trxId,{status:'maker',pajak:pajakData},
+    await updateTrx(trxId, {status:'maker', pajak:pajakData},
       'Pajak '+selPajak.label+' '+_pajakState.rate+'% = '+fmt(nominalPajak)+'. Net: '+fmt(nominalNet)+'. Bukti: '+bp);
   }
+  closeModal();
+}
+
+async function submitPajakManual(trxId) {
+  const bp     = (document.getElementById('pj-buktipotong')?.value||'').trim();
+  const inv    = Number(String(document.getElementById('pm-invoice')?.value||'').replace(/\D/g,''));
+  const pajak  = Number(String(document.getElementById('pm-pajak')?.value||'').replace(/\D/g,''));
+  const net    = Number(String(document.getElementById('pm-net')?.value||'').replace(/\D/g,''));
+  const gross  = Number(String(document.getElementById('pm-gross')?.value||'').replace(/\D/g,''));
+  const jenis  = (document.getElementById('pm-jenis')?.value||'').trim();
+  if (!bp)    { showToast('Isi Nomor Bukti Potong','ti-alert-triangle'); return; }
+  if (!inv)   { showToast('Isi Nominal Invoice','ti-alert-triangle'); return; }
+  if (!pajak) { showToast('Isi Nominal Pajak','ti-alert-triangle'); return; }
+  if (!net)   { showToast('Isi Nominal Net Diterima','ti-alert-triangle'); return; }
+  const pajakData = {
+    manual: true, typeLabel: jenis||'Manual', rate: null,
+    grossUp: gross > 0, nominalGross: gross||null,
+    nominalPajak: pajak, nominalNet: net, buktiPotong: bp
+  };
+  await updateTrx(trxId, {status:'maker', pajak:pajakData},
+    'Pajak manual: '+fmt(pajak)+'. Net: '+fmt(net)+'. Bukti: '+bp);
   closeModal();
 }
 
