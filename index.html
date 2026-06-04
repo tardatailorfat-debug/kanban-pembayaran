@@ -241,7 +241,8 @@ select.fld option{background:var(--bg3)}
 // ════════════════════════════════════════════════════════════
 //  CONFIG — ganti URL di bawah ini
 // ════════════════════════════════════════════════════════════
-const API = 'https://script.google.com/macros/s/AKfycbxb0bUxkWGda81Y9Aq0L9oxjmX9nMr-x90Gxrf9eU40FBEZSaTnoQ9XuwcdPtqxz0ZbTA/exec';
+const API = 'https://script.google.com/macros/s/AKfycbxb0bUxkWGda81Y9Aq0L9oxjmX9nMr-x90Gxrf9eU40FBEZSaTnoQ9XuwcdPtqxz0ZbTA/exec
+';
 
 const PASSWORDS = {
   owner:          'owner123',
@@ -428,6 +429,38 @@ function renderStats() {
     <div class="stat-chip"><i class="ti ti-circle-check" style="color:var(--green);font-size:13px"></i><span>Selesai</span><strong>${totalSelesai}</strong></div>
     <div class="stat-chip"><i class="ti ti-receipt" style="color:var(--orange);font-size:13px"></i><span>Total Pajak</span><strong>${fmt(totalPajak)}</strong></div>
   </div>`;
+}
+
+// ─── Render History ──────────────────────────────────────────
+// Support dua format:
+//   1. Array of { msg, ts, col, label } (dari backend baru)
+//   2. String teks per baris: "[04 Jun 2026 22:28 WIB] Pesan" (fallback)
+function parseHistoryFrontend(raw) {
+  if (!raw) return [];
+  // Sudah jadi array (dari backend)
+  if (Array.isArray(raw)) return raw;
+  // String teks per baris
+  const lines = String(raw).split('\n').filter(Boolean);
+  return lines.map(line => {
+    const m = line.match(/^\[(.+?)\] (.+)$/);
+    return { msg: m ? m[2] : line, label: m ? m[1] : '', col: 'pengajuan' };
+  });
+}
+
+function renderHistory(raw) {
+  const entries = parseHistoryFrontend(raw);
+  if (entries.length === 0) return '<div style="font-size:12px;color:var(--txt3)">Belum ada riwayat.</div>';
+  return [...entries].reverse().map(h => {
+    const hcol = COLS.find(c => c.id === h.col) || COLS[0];
+    const timeStr = h.label || (h.ts ? fmtD(h.ts) : '');
+    return `<div class="hist-item">
+      <div class="hist-dot" style="background:${hcol.acc}"></div>
+      <div>
+        <div class="hist-text">${esc(h.msg)}</div>
+        ${timeStr ? `<div class="hist-time">${esc(timeStr)}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ─── Toast ───────────────────────────────────────────────────
@@ -716,13 +749,7 @@ async function openTrxModal(id) {
         </div>`:''}
         <div class="section">
           <label>Riwayat</label>
-          ${[...(t.history||[])].reverse().map(h=>{
-            const hcol=COLS.find(c=>c.id===h.col)||COLS[0];
-            return `<div class="hist-item">
-              <div class="hist-dot" style="background:${hcol.acc}"></div>
-              <div><div class="hist-text">${esc(h.msg)}</div><div class="hist-time">${fmtD(h.ts)}</div></div>
-            </div>`;
-          }).join('')}
+          ${renderHistory(t.history)}
         </div>
       </div>
       ${buildActionHTML(t)}
