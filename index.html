@@ -652,8 +652,36 @@ function getBankValue() {
   return sel.value;
 }
 
+// ─── Generate Nomor Invoice Otomatis ────────────────────────
+function getInvoicePrefix(role) {
+  if (role === 'admin_produksi')  return 'MP';
+  if (role === 'admin_marketing') return 'MM';
+  if (role === 'admin_sales')     return 'MO';
+  return 'MU';
+}
+
+function generateInvoiceNo() {
+  const role   = currentUser?.role || '';
+  const prefix = getInvoicePrefix(role);
+
+  // Format tanggal hari ini: DDMMYYYY
+  const now = new Date();
+  const dd  = String(now.getDate()).padStart(2,'0');
+  const mm  = String(now.getMonth()+1).padStart(2,'0');
+  const yyyy = now.getFullYear();
+  const tgl  = dd + mm + yyyy;
+
+  // Hitung berapa invoice dengan prefix+tanggal yang sama sudah ada di trxs (data lokal)
+  const pattern = prefix + '-' + tgl + '-';
+  const existing = trxs.filter(t => t.invoice && t.invoice.startsWith(pattern));
+  const urut = String(existing.length + 1).padStart(3, '0');
+
+  return prefix + '-' + tgl + '-' + urut;
+}
+
 function openAddModal() {
-  const nextId = 'TRX' + String(trxs.length + 1).padStart(3,'0');
+  const nextId    = 'TRX' + String(trxs.length + 1).padStart(3,'0');
+  const invoiceNo = generateInvoiceNo();
   showFormModal({
     title: 'Tambah Pengajuan Baru',
     subtitle: 'ID: ' + nextId,
@@ -662,6 +690,8 @@ function openAddModal() {
     iconFg: '#79c0ff',
     defaultName: '',
     defaultPengaju: currentUser.name,
+    defaultInvoice: invoiceNo,
+    invoiceReadonly: true,
     submitLabel: 'Ajukan Permintaan Dana',
     submitFn: 'submitAdd',
     fileKey: 'add',
@@ -721,7 +751,14 @@ function showFormModal(cfg) {
         </div>
         <div class="row2 section">
           <div><label>Nama Vendor / Penerima</label><input type="text" class="fld" id="f-vendor" value="${esc(d.defaultVendor||'')}" placeholder="Nama vendor/penerima"></div>
-          <div><label>No. Invoice / Kwitansi</label><input type="text" class="fld" id="f-invoice" value="${esc(d.defaultInvoice||'')}" placeholder="INV-..."></div>
+          <div>
+            <label>No. Invoice / Kwitansi</label>
+            <input type="text" class="fld" id="f-invoice"
+              value="${esc(d.defaultInvoice||'')}"
+              placeholder="Otomatis..."
+              ${d.invoiceReadonly ? `readonly style="background:var(--bg4);color:var(--txt2);cursor:default"` : ''}>
+            ${d.invoiceReadonly ? `<div style="font-size:10.5px;color:var(--txt3);margin-top:4px"><i class="ti ti-info-circle" style="font-size:11px"></i> Nomor final dikonfirmasi server saat submit</div>` : ''}
+          </div>
         </div>
         <div class="row2 section">
           <div><label>No. Rekening</label><input type="text" class="fld" id="f-rek" value="${esc(d.defaultRek||'')}" placeholder="Nomor rekening"></div>
@@ -781,7 +818,6 @@ async function submitAdd() {
     tipe:document.getElementById('f-tipe').value,
     tanggal:document.getElementById('f-tanggal').value,
     vendor,
-    invoice:document.getElementById('f-invoice').value,
     nominal:Number(nominal),
     deskripsi:document.getElementById('f-desk').value,
     noRekening:document.getElementById('f-rek').value,
@@ -792,10 +828,11 @@ async function submitAdd() {
   try {
     const res = await apiPost({action:'addTrx', data});
     if (res.ok) {
-      const newId = res.id;
-      const files = window._pendingFiles?.add || [];
+      const newId  = res.id;
+      const invNo  = res.invoice || '';
+      const files  = window._pendingFiles?.add || [];
       for (const f of files) await uploadFileToDrive(newId, f.file, 'lampiran_pengajuan');
-      showToast('Pengajuan '+newId+' berhasil dibuat','ti-file-plus');
+      showToast(newId + ' berhasil dibuat | ' + invNo, 'ti-file-plus');
       closeModal();
       await loadAll();
     } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
