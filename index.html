@@ -440,8 +440,29 @@ function doLogin() {
 }
 
 function logout() {
+  // Tampilkan konfirmasi dulu
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay">
+    <div class="modal" style="max-width:340px">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:var(--red-bg)"><i class="ti ti-logout" style="font-size:16px;color:var(--red)"></i></div>
+        <div><h2>Keluar</h2><p>Konfirmasi logout</p></div>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px;color:var(--txt2)">Apakah kamu yakin ingin keluar dari aplikasi?</p>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-danger" onclick="doLogout()"><i class="ti ti-logout" style="font-size:14px"></i> Ya, Keluar</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function doLogout() {
   currentUser = null; trxs = [];
   clearSession();
+  closeModal();
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('ls-pass').value = '';
@@ -602,6 +623,18 @@ async function updateTrx(id, patch, histMsg) {
 // ════════════════════════════════════════════════════════════
 //  MODAL — TAMBAH PENGAJUAN
 // ════════════════════════════════════════════════════════════
+// Format input nominal dengan titik ribuan otomatis
+function formatNominalInput(el) {
+  const pos   = el.selectionStart;
+  const prev  = el.value.length;
+  const raw   = el.value.replace(/\D/g, '');
+  const formatted = raw ? Number(raw).toLocaleString('id-ID') : '';
+  el.value = formatted;
+  // Pertahankan posisi kursor
+  const diff = formatted.length - prev;
+  el.setSelectionRange(pos + diff, pos + diff);
+}
+
 function onBankChange(key) {
   const sel = document.getElementById('f-bank');
   const manual = document.getElementById('f-bank-manual');
@@ -704,7 +737,14 @@ function showFormModal(cfg) {
           </div>
         </div>
         <div class="section"><label>NPWP / NIK</label><input type="text" class="fld" id="f-npwp" value="${esc(d.defaultNpwp||'')}" placeholder="Nomor NPWP atau NIK"></div>
-        <div class="section"><label>Nominal (Rp)</label><input type="text" class="fld" id="f-nominal" value="${d.defaultNominal||''}" placeholder="Contoh: 5000000" inputmode="numeric"></div>
+        <div class="section">
+          <label>Nominal (Rp)</label>
+          <input type="text" class="fld" id="f-nominal"
+            value="${d.defaultNominal ? Number(d.defaultNominal).toLocaleString('id-ID') : ''}"
+            placeholder="Contoh: 5.000.000"
+            inputmode="numeric"
+            oninput="formatNominalInput(this)">
+        </div>
         <div class="section"><label>Deskripsi / Keterangan</label><textarea class="fld" id="f-desk" placeholder="Uraian singkat...">${esc(d.defaultDesk||'')}</textarea></div>
         <div class="section">
           <label>Lampiran Dokumen</label>
