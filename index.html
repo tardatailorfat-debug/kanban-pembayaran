@@ -321,12 +321,12 @@ select.fld option{background:var(--bg3)}
 const API = 'https://script.google.com/macros/s/AKfycbxb0bUxkWGda81Y9Aq0L9oxjmX9nMr-x90Gxrf9eU40FBEZSaTnoQ9XuwcdPtqxz0ZbTA/exec';
 
 const PASSWORDS = {
-  owner:          'useradmin123',
-  finance:        'superman999',
-  releaser:       'bosziyad123',
-  admin_produksi: 'hahahihi',
-  admin_sales:    'pritha123',
-  admin_marketing:'marketing1473',
+  owner:          'owner123',
+  finance:        'finance123',
+  releaser:       'releaser123',
+  admin_produksi: 'produksi123',
+  admin_sales:    'sales123',
+  admin_marketing:'marketing123',
 };
 
 const ROLE_LABELS = {
@@ -717,6 +717,7 @@ function openEditModal(id) {
     defaultInvoice: t.invoice,
     defaultRek: t.noRekening,
     defaultBank: t.namaBank,
+    defaultNamaTujuan: t.namaTujuanRekening,
     defaultNpwp: t.npwpNik,
     defaultNominal: t.nominal,
     defaultDesk: t.deskripsi,
@@ -761,9 +762,9 @@ function showFormModal(cfg) {
           </div>
         </div>
         <div class="row2 section">
-          <div><label>No. Rekening</label><input type="text" class="fld" id="f-rek" value="${esc(d.defaultRek||'')}" placeholder="Nomor rekening"></div>
+          <div><label>No. Rekening <span style="color:var(--red)">*</span></label><input type="text" class="fld" id="f-rek" value="${esc(d.defaultRek||'')}" placeholder="Nomor rekening"></div>
           <div>
-            <label>Nama Bank</label>
+            <label>Nama Bank <span style="color:var(--red)">*</span></label>
             <select class="fld" id="f-bank" onchange="onBankChange('${d.fileKey}')">
               ${['BCA','BRI','BNI','Mandiri','BSI','CIMB','Danamon','Permata','BTN'].map(b=>`<option value="${b}"${b===(d.defaultBank||'BCA')?' selected':''}>${b}</option>`).join('')}
               <option value="__lain__"${!['BCA','BRI','BNI','Mandiri','BSI','CIMB','Danamon','Permata','BTN'].includes(d.defaultBank)&&d.defaultBank?' selected':''}>Bank Lain...</option>
@@ -772,6 +773,10 @@ function showFormModal(cfg) {
               style="margin-top:6px;display:${!['BCA','BRI','BNI','Mandiri','BSI','CIMB','Danamon','Permata','BTN'].includes(d.defaultBank)&&d.defaultBank?'block':'none'}"
               value="${!['BCA','BRI','BNI','Mandiri','BSI','CIMB','Danamon','Permata','BTN'].includes(d.defaultBank)&&d.defaultBank?esc(d.defaultBank):''}">
           </div>
+        </div>
+        <div class="section">
+          <label>Nama Tujuan Rekening <span style="color:var(--red)">*</span></label>
+          <input type="text" class="fld" id="f-namatujuan" value="${esc(d.defaultNamaTujuan||'')}" placeholder="Nama pemilik rekening / penerima transfer">
         </div>
         <div class="section"><label>NPWP / NIK</label><input type="text" class="fld" id="f-npwp" value="${esc(d.defaultNpwp||'')}" placeholder="Nomor NPWP atau NIK"></div>
         <div class="section">
@@ -807,11 +812,14 @@ function showFormModal(cfg) {
 }
 
 async function submitAdd() {
-  const name    = document.getElementById('f-name')?.value.trim();
-  const pengaju = document.getElementById('f-pengaju')?.value.trim();
-  const vendor  = document.getElementById('f-vendor')?.value.trim();
-  const nominal = String(document.getElementById('f-nominal')?.value||'').replace(/\D/g,'');
+  const name          = document.getElementById('f-name')?.value.trim();
+  const pengaju       = document.getElementById('f-pengaju')?.value.trim();
+  const vendor        = document.getElementById('f-vendor')?.value.trim();
+  const nominal       = String(document.getElementById('f-nominal')?.value||'').replace(/\D/g,'');
+  const noRekening    = document.getElementById('f-rek')?.value.trim();
+  const namaTujuan    = document.getElementById('f-namatujuan')?.value.trim();
   if (!name||!pengaju||!vendor||!nominal) { showToast('Lengkapi field wajib','ti-alert-triangle'); return; }
+  if (!noRekening||!namaTujuan) { showToast('No. Rekening dan Nama Tujuan wajib diisi','ti-alert-triangle'); return; }
   const data = {
     name, pengaju,
     dept:document.getElementById('f-dept').value,
@@ -820,9 +828,10 @@ async function submitAdd() {
     vendor,
     nominal:Number(nominal),
     deskripsi:document.getElementById('f-desk').value,
-    noRekening:document.getElementById('f-rek').value,
+    noRekening,
     namaBank:getBankValue(),
     npwpNik:document.getElementById('f-npwp').value,
+    namaTujuanRekening: namaTujuan,
   };
   showLoader('Menyimpan pengajuan...');
   try {
@@ -859,6 +868,7 @@ async function submitEdit() {
     noRekening:document.getElementById('f-rek').value,
     namaBank:getBankValue(),
     npwpNik:document.getElementById('f-npwp').value,
+    namaTujuanRekening:(document.getElementById('f-namatujuan')?.value||'').trim(),
     editedBy:currentUser.name,
   };
   showLoader('Menyimpan perubahan...');
@@ -908,6 +918,7 @@ function openTrxModal(id) {
             <span class="k">Tanggal</span><span class="v">${fmtD(t.createdAt)}</span>
             <span class="k">Nominal Bruto</span><span class="v">${fmt(t.nominal)}</span>
             ${t.noRekening?`<span class="k">No. Rekening</span><span class="v">${esc(t.noRekening)} (${esc(t.namaBank)})</span>`:''}
+            ${t.namaTujuanRekening?`<span class="k">Nama Tujuan</span><span class="v plain">${esc(t.namaTujuanRekening)}</span>`:''}
             ${t.npwpNik?`<span class="k">NPWP / NIK</span><span class="v">${esc(t.npwpNik)}</span>`:''}
           </div>
         </div>
