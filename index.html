@@ -263,9 +263,10 @@ select.fld option{background:var(--bg3)}
         <option value="owner">Owner</option>
         <option value="finance">Finance</option>
         <option value="releaser">Releaser BOD</option>
-        <option value="admin_produksi">Admin Produksi</option>
-        <option value="admin_sales">Admin Sales</option>
-        <option value="admin_marketing">Admin Marketing</option>
+        <option value="divisi_produksi">Divisi Produksi</option>
+        <option value="sales">Sales</option>
+        <option value="divisi_marketing">Divisi Marketing</option>
+        <option value="umum">Umum</option>
       </select>
     </div>
     <div class="login-field">
@@ -321,17 +322,23 @@ select.fld option{background:var(--bg3)}
 const API = 'https://script.google.com/macros/s/AKfycbxb0bUxkWGda81Y9Aq0L9oxjmX9nMr-x90Gxrf9eU40FBEZSaTnoQ9XuwcdPtqxz0ZbTA/exec';
 
 const PASSWORDS = {
-  owner:          'useradmin123',
-  finance:        'superman999',
-  releaser:       'bosziyad123',
-  admin_produksi: 'hahahihi',
-  admin_sales:    'pritha123',
-  admin_marketing:'marketing1473',
+  owner:             'useradmin123',
+  finance:           'superman999',
+  releaser:          'bosziyad123',
+  divisi_produksi:   'hahahihi',
+  sales:             'pritha123',
+  divisi_marketing:  'marketing1473',
+  umum:              'tardaumum123',
 };
 
 const ROLE_LABELS = {
-  owner:'Owner', finance:'Finance', releaser:'Releaser BOD',
-  admin_produksi:'Admin Produksi', admin_sales:'Admin Sales', admin_marketing:'Admin Marketing'
+  owner:            'Owner',
+  finance:          'Finance',
+  releaser:         'Releaser BOD',
+  divisi_produksi:  'Divisi Produksi',
+  sales:            'Sales',
+  divisi_marketing: 'Divisi Marketing',
+  umum:             'Umum',
 };
 
 const COLS = [
@@ -392,8 +399,8 @@ const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 
 function can(action) {
   const r = currentUser?.role;
-  if (r === 'owner') return true;  // owner bisa semua
-  if (action === 'pengajuan') return ['admin_produksi','admin_sales','admin_marketing'].includes(r);
+  if (r === 'owner') return true;
+  if (action === 'pengajuan') return ['divisi_produksi','sales','divisi_marketing','umum','finance'].includes(r);
   if (action === 'finance')   return r === 'finance';
   if (action === 'releaser')  return r === 'releaser';
   if (action === 'report')    return r === 'finance';
@@ -402,7 +409,7 @@ function can(action) {
 
 function isAdmin() {
   const r = currentUser?.role;
-  return ['admin_produksi','admin_sales','admin_marketing'].includes(r);
+  return ['divisi_produksi','sales','divisi_marketing','umum'].includes(r);
 }
 
 function isOwner() {
@@ -507,7 +514,7 @@ function renderBoard() {
   board.innerHTML = '';
   COLS.forEach(col => {
     const cards = trxs.filter(t => t.status === col.id);
-    const canAdd = col.id === 'pengajuan' && (can('pengajuan') || currentUser?.role === 'owner');
+    const canAdd = col.id === 'pengajuan' && (can('pengajuan') || isOwner());
     const colEl = document.createElement('div');
     colEl.className = 'col';
     colEl.innerHTML = `
@@ -654,9 +661,9 @@ function getBankValue() {
 
 // ─── Generate Nomor Invoice Otomatis ────────────────────────
 function getInvoicePrefix(role) {
-  if (role === 'admin_produksi')  return 'MP';
-  if (role === 'admin_marketing') return 'MM';
-  if (role === 'admin_sales')     return 'MO';
+  if (role === 'divisi_produksi')  return 'MP';
+  if (role === 'divisi_marketing') return 'MM';
+  if (role === 'sales')            return 'MO';
   return 'MU';
 }
 
