@@ -257,12 +257,13 @@ select.fld option{background:var(--bg3)}
   .stat-chip{font-size:10px}
   .stat-chip span:not(strong){display:none}
 
-  /* Search bar mobile */
-  .search-bar{padding:6px 10px;gap:6px}
-  .search-input-wrap{min-width:120px;padding:5px 8px}
+  /* Search bar mobile: search di baris penuh, filter di baris kedua */
+  .search-bar{padding:8px 10px;gap:6px;flex-wrap:wrap}
+  .search-input-wrap{flex:1 1 100%;min-width:0;width:100%;padding:6px 10px;box-sizing:border-box}
   .search-input-wrap input{font-size:16px} /* cegah zoom iOS */
-  .search-select{font-size:11px;padding:5px 6px}
+  .search-select{font-size:11.5px;padding:6px 8px;flex:1 1 auto;min-width:0}
   #filter-date-from, #filter-date-to{display:none} /* sembunyikan di mobile, terlalu sempit */
+  .search-bar > .tb-btn{flex-shrink:0}
 
   /* Board: kolom scroll horizontal, tinggi mengisi sisa layar */
   .board-wrap{padding:8px;gap:8px;align-items:stretch}
@@ -481,7 +482,7 @@ select.fld option{background:var(--bg3)}
 const API = 'https://script.google.com/macros/s/AKfycbxb0bUxkWGda81Y9Aq0L9oxjmX9nMr-x90Gxrf9eU40FBEZSaTnoQ9XuwcdPtqxz0ZbTA/exec';
 
 const PASSWORDS = {
-  owner:             'useradmin123',
+  owner:             'useradmin',
   finance:           'superman999',
   releaser:          'bosziyad123',
   divisi_produksi:   'hahahihi',
@@ -1971,7 +1972,7 @@ async function submitAddPekerja() {
 async function openPekerjaDetailModal(id) {
   const p = pekerjaList.find(x=>x.id===id);
   if (!p) return;
-  const canEdit = isOwner() || can('finance');
+  const canEdit = isOwner() || can('finance') || isKepalaProduksi();
 
   document.getElementById('modal-area').innerHTML = `
   <div class="overlay" onclick="if(event.target===this)closeModal()">
@@ -2003,10 +2004,50 @@ async function openPekerjaDetailModal(id) {
       </div>
       ${canEdit ? `
       <div class="action-area">
-        <button class="btn btn-warn" onclick="openEditPekerjaModal('${id}')"><i class="ti ti-edit" style="font-size:14px"></i> Edit Data Pekerja</button>
+        <button class="btn btn-warn" onclick="openEditPekerjaModal('${id}')"><i class="ti ti-edit" style="font-size:14px"></i> Edit Data / Saldo Kasbon</button>
+        <button class="btn btn-danger" onclick="confirmDeletePekerja('${id}')"><i class="ti ti-trash" style="font-size:14px"></i> Hapus Pekerja (Resign)</button>
       </div>` : ''}
     </div>
   </div>`;
+}
+
+function confirmDeletePekerja(id) {
+  const p = pekerjaList.find(x=>x.id===id);
+  if (!p) return;
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:var(--red-bg)"><i class="ti ti-alert-triangle" style="font-size:16px;color:var(--red)"></i></div>
+        <div><h2>Hapus Pekerja</h2><p>Tindakan ini tidak bisa dibatalkan</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px;color:var(--txt2);line-height:1.7">
+          Yakin ingin menghapus <strong style="color:var(--txt)">${esc(p.nama)}</strong> dari data master pekerja?
+          ${p.saldoKasbon>0 ? `<br><br><span style="color:var(--orange)">⚠️ Pekerja ini masih punya sisa saldo kasbon ${fmt(p.saldoKasbon)}.</span>` : ''}
+          <br><br>Riwayat kasbon sebelumnya akan tetap tersimpan, hanya data pekerja yang dihapus dari daftar aktif.
+        </p>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-danger" onclick="runDeletePekerja('${id}')"><i class="ti ti-trash" style="font-size:14px"></i> Ya, Hapus Pekerja</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function runDeletePekerja(id) {
+  showLoader('Menghapus pekerja...');
+  try {
+    const res = await apiPost({action:'deletePekerja', id});
+    if (res.ok) {
+      showToast('Pekerja berhasil dihapus','ti-trash');
+      closeModal();
+      await loadKasbonAll();
+    } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
+  } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
+  hideLoader();
 }
 
 async function loadRiwayatKasbonModal(pekerjaId) {
@@ -2067,6 +2108,10 @@ function openEditPekerjaModal(id) {
           <label>Gaji Fix Bulanan (Rp)</label>
           <input type="text" class="fld" id="pk-gajifix" value="${p.gajiFix?Number(p.gajiFix).toLocaleString('id-ID'):''}" inputmode="numeric" oninput="formatNominalInput(this)">
         </div>
+        <div class="section">
+          <label>Saldo Kasbon (Rp) <span style="color:var(--txt3);font-weight:400;text-transform:none">— langsung update, tidak masuk riwayat</span></label>
+          <input type="text" class="fld" id="pk-saldokasbon" value="${p.saldoKasbon?Number(p.saldoKasbon).toLocaleString('id-ID'):'0'}" inputmode="numeric" oninput="formatNominalInput(this)">
+        </div>
         <input type="hidden" id="pk-editid" value="${p.id}">
       </div>
       <div class="action-area">
@@ -2087,6 +2132,7 @@ async function submitEditPekerja() {
     namaBank: document.getElementById('pk-bank')?.value.trim(),
     namaTujuanRekening: document.getElementById('pk-tujuan')?.value.trim(),
     gajiFix: Number(String(document.getElementById('pk-gajifix')?.value||'').replace(/\D/g,'')) || 0,
+    saldoKasbon: Number(String(document.getElementById('pk-saldokasbon')?.value||'').replace(/\D/g,'')) || 0,
   };
   showLoader('Menyimpan...');
   try {
@@ -2157,7 +2203,7 @@ function openAddKasbonModal() {
           <label>Nama Pekerja <span style="color:var(--red)">*</span></label>
           <select class="fld" id="ksb-pekerja">
             <option value="">— Pilih Pekerja —</option>
-            ${pekerjaList.filter(p=>p.aktif!==false).map(p=>`<option value="${p.id}">${esc(p.nama)} (${esc(kategoriLabel(p.kategori))}) — Saldo: ${fmt(p.saldoKasbon||0)}</option>`).join('')}
+            ${pekerjaList.filter(p=>p.aktif!==false).map(p=>`<option value="${p.id}">${esc(p.nama)}</option>`).join('')}
           </select>
         </div>
         <div class="section">
