@@ -200,9 +200,22 @@ select.fld option{background:var(--bg3)}
 .prog-bar-wrap{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden}
 .prog-bar{height:100%;border-radius:3px;transition:width .5s ease}
 
+/* KASBON: watermark logo TARDA samar di background */
+.kasbon-body-watermark::before{
+  content:'';
+  position:absolute; inset:0; pointer-events:none; z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 460' %3E%3Cpath d='M150 180 L150 110 Q150 50 200 50 Q250 50 250 110 L250 180' fill='none' stroke='%23ffffff' stroke-width='7'/%3E%3Cpath d='M200 50 L200 110' stroke='%23ffffff' stroke-width='7'/%3E%3Cpath d='M180 90 L200 60 L220 90' fill='none' stroke='%23ffffff' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ctext x='200' y='280' font-family='Georgia,serif' font-size='72' font-weight='700' fill='%23ffffff' text-anchor='middle' letter-spacing='4'%3ETARDA%3C/text%3E%3Ctext x='200' y='312' font-family='Georgia,serif' font-size='15' fill='%23ffffff' text-anchor='middle' letter-spacing='3'%3ECUSTOM LUXURY THOBE%3C/text%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:center 38%;
+  background-size:min(70%, 360px) auto;
+  opacity:.035;
+}
+.kasbon-body-watermark > *{position:relative;z-index:1}
+
 /* KASBON: tabel master pekerja */
 .ktable-wrap{overflow-x:auto;border:1px solid var(--bdr);border-radius:var(--radius);background:var(--bg2)}
 .ktable{width:100%;border-collapse:collapse;font-size:12.5px;min-width:680px}
+.ktable.ktable-compact{min-width:0} /* untuk tabel batch gaji: tidak perlu lebar minimum besar */
 .ktable th{text-align:left;padding:10px 12px;background:var(--bg3);color:var(--txt2);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--bdr);white-space:nowrap}
 .ktable td{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--txt);white-space:nowrap}
 .ktable tr:hover td{background:rgba(255,255,255,.02)}
@@ -457,7 +470,7 @@ select.fld option{background:var(--bg3)}
             <i class="ti ti-database" style="font-size:13px"></i> Init DB
           </button>
         </div>
-        <div id="kasbon-body" style="flex:1;overflow-y:auto;padding:14px"></div>
+        <div id="kasbon-body" class="kasbon-body-watermark" style="flex:1;overflow-y:auto;padding:14px;position:relative"></div>
       </div>
     </div>
   </div>
@@ -482,7 +495,7 @@ select.fld option{background:var(--bg3)}
 const API = 'https://script.google.com/macros/s/AKfycbxb0bUxkWGda81Y9Aq0L9oxjmX9nMr-x90Gxrf9eU40FBEZSaTnoQ9XuwcdPtqxz0ZbTA/exec';
 
 const PASSWORDS = {
-  owner:             'useradmin',
+  owner:             'useradmin123',
   finance:           'superman999',
   releaser:          'bosziyad123',
   divisi_produksi:   'hahahihi',
@@ -603,6 +616,26 @@ const fmtD = d => {
   } catch(e) { return String(d); }
 };
 const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+// Format bulan "2026-06" → "Juni 2026". Defensif terhadap data lama yang
+// mungkin tersimpan sebagai ISO timestamp akibat bug konversi Sheets.
+const BULAN_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+function fmtBulan(val) {
+  if (!val) return '-';
+  const str = String(val);
+  // Format benar: "2026-06"
+  let m = str.match(/^(\d{4})-(\d{2})$/);
+  if (m) return BULAN_NAMES[parseInt(m[2],10)-1] + ' ' + m[1];
+  // Fallback: data lama rusak jadi ISO timestamp, contoh "2026-05-31T17:00:00.000Z"
+  const dt = new Date(str);
+  if (!isNaN(dt)) {
+    // Karena timestamp disimpan sebagai UTC 17:00 (=00:00 WIB hari berikutnya),
+    // tambahkan 7 jam dulu agar bulan yang ditampilkan sesuai input asli
+    const wib = new Date(dt.getTime() + 7*60*60*1000);
+    return BULAN_NAMES[wib.getMonth()] + ' ' + wib.getFullYear();
+  }
+  return str;
+}
 
 function can(action) {
   const r = currentUser?.role;
@@ -2521,7 +2554,7 @@ function openGajiMingguanDetailModal(id) {
         <div class="section">
           <label>Detail Pekerja (${items.length})</label>
           <div class="ktable-wrap">
-            <table class="ktable">
+            <table class="ktable ktable-compact">
               <thead><tr><th>Nama</th><th>Upah</th><th>Potongan</th></tr></thead>
               <tbody>${items.map(it=>`<tr><td>${esc(it.nama)}</td><td>${fmt(it.nominalUpah)}</td><td>${fmt(it.potonganKasbon)}</td></tr>`).join('')}</tbody>
             </table>
@@ -2583,7 +2616,7 @@ function renderGajiBulananBoardHTML() {
             cards.map(g => `
               <div class="kcard" id="gbl-card-${g.id}">
                 <div class="kcard-id">${g.id}</div>
-                <div class="kcard-title">Gaji ${esc(g.bulan)}</div>
+                <div class="kcard-title">Gaji ${fmtBulan(g.bulan)}</div>
                 <div class="kcard-sub">${(g.items||[]).length} pekerja bulanan</div>
                 <div class="kcard-amount">${fmt(g.totalGaji)}</div>
               </div>`).join('')}
@@ -2749,10 +2782,10 @@ function openGajiBulananDetailModal(id) {
 
   document.getElementById('modal-area').innerHTML = `
   <div class="overlay" onclick="if(event.target===this)closeModal()">
-    <div class="modal" style="max-width:600px">
+    <div class="modal" style="max-width:680px">
       <div class="modal-hdr">
         <div class="m-icon" style="background:${col.bg}"><i class="ti ${col.icon}" style="font-size:16px;color:${col.fg}"></i></div>
-        <div><h2>Gaji Bulanan ${esc(g.bulan)}</h2><p>${g.id}</p></div>
+        <div><h2>Gaji Bulanan ${fmtBulan(g.bulan)}</h2><p>${g.id}</p></div>
         <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
       </div>
       <div class="modal-body">
@@ -2767,7 +2800,7 @@ function openGajiBulananDetailModal(id) {
         <div class="section">
           <label>Detail Pekerja (${items.length})</label>
           <div class="ktable-wrap">
-            <table class="ktable">
+            <table class="ktable ktable-compact" style="font-size:11.5px">
               <thead><tr><th>Nama</th><th>Gaji Fix</th><th>Lembur</th><th>Potongan</th><th>Diterima</th></tr></thead>
               <tbody>${items.map(it=>`<tr><td>${esc(it.nama)}</td><td>${fmt(it.gajiFix)}</td><td>${fmt(it.lembur)}</td><td>${fmt(it.potonganKasbon)}</td><td style="font-weight:600">${fmt(it.gajiDiterima)}</td></tr>`).join('')}</tbody>
             </table>
