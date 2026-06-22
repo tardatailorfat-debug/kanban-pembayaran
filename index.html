@@ -51,6 +51,13 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .tb-btn{background:var(--bg3);border:1px solid var(--bdr);border-radius:6px;color:var(--txt2);font-size:12px;padding:5px 10px;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit;transition:border-color .15s,color .15s}
 .tb-btn:hover{border-color:var(--bdr2);color:var(--txt)}
 
+/* MENU TABS (Pembayaran / Kasbon, dan sub-tab Kasbon) */
+.menu-tabs{background:var(--bg2);border-bottom:1px solid var(--bdr);display:flex;gap:2px;padding:0 12px;flex-shrink:0;overflow-x:auto}
+.menu-tabs::-webkit-scrollbar{height:0}
+.menu-tab{background:none;border:none;border-bottom:2px solid transparent;color:var(--txt2);font-family:inherit;font-size:12.5px;font-weight:500;padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:color .15s,border-color .15s}
+.menu-tab:hover{color:var(--txt)}
+.menu-tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+
 .stats-bar{background:var(--bg2);border-bottom:1px solid var(--bdr);padding:0 16px;display:flex;gap:20px;align-items:center;height:36px;flex-shrink:0;overflow-x:auto}
 .stats-bar::-webkit-scrollbar{height:0}
 .stat-chip{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--txt2);white-space:nowrap}
@@ -175,6 +182,41 @@ select.fld option{background:var(--bg3)}
 .prog-bar-wrap{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden}
 .prog-bar{height:100%;border-radius:3px;transition:width .5s ease}
 
+/* KASBON: tabel master pekerja */
+.ktable-wrap{overflow-x:auto;border:1px solid var(--bdr);border-radius:var(--radius);background:var(--bg2)}
+.ktable{width:100%;border-collapse:collapse;font-size:12.5px;min-width:680px}
+.ktable th{text-align:left;padding:10px 12px;background:var(--bg3);color:var(--txt2);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--bdr);white-space:nowrap}
+.ktable td{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--txt);white-space:nowrap}
+.ktable tr:hover td{background:rgba(255,255,255,.02)}
+.ktable tr{cursor:pointer}
+.kcat-badge{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;display:inline-block}
+.kcat-borongan{background:rgba(56,139,253,.15);color:#79c0ff}
+.kcat-bulanan_penjahit{background:rgba(63,185,80,.15);color:#7ee787}
+.kcat-bulanan_finishing{background:rgba(210,153,34,.15);color:#e3b341}
+.ksaldo-pos{color:var(--orange);font-weight:600;font-family:'JetBrains Mono',monospace}
+.ksaldo-zero{color:var(--txt3);font-family:'JetBrains Mono',monospace}
+
+/* KASBON: kanban board mini (4/5 kolom, mirip board utama tapi mandiri) */
+.kboard-wrap{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px}
+.kcol{flex:0 0 230px;display:flex;flex-direction:column;background:var(--bg2);border-radius:10px;border:1px solid var(--bdr);max-height:calc(100dvh - 220px)}
+.kcol-hdr{padding:10px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--bdr);background:var(--bg3);border-radius:10px 10px 0 0}
+.kcol-hdr .ico{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kcol-hdr .label{font-size:11px;font-weight:600;flex:1;color:var(--txt)}
+.kcol-hdr .cnt{font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:20px}
+.kcards{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:7px}
+.kcard{background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--radius);padding:10px;cursor:pointer;transition:border-color .15s,transform .1s}
+.kcard:hover{border-color:var(--bdr2);transform:translateY(-1px)}
+.kcard-id{font-size:10px;color:var(--txt3);font-family:'JetBrains Mono',monospace}
+.kcard-title{font-size:12.5px;font-weight:600;color:var(--txt);margin:3px 0 2px}
+.kcard-sub{font-size:11px;color:var(--txt2);margin-bottom:4px}
+.kcard-amount{font-size:13px;font-weight:600;color:var(--txt);font-family:'JetBrains Mono',monospace}
+
+/* Batch item row (gaji mingguan/bulanan form) */
+.batch-row{display:grid;grid-template-columns:1fr 110px 100px 100px 32px;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.batch-row.header{font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--bdr)}
+.batch-row input,.batch-row select{font-size:12px;padding:6px 7px}
+.batch-summary{background:var(--bg3);border-radius:var(--radius);padding:10px 12px;margin-top:8px;font-size:12.5px}
+
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
@@ -257,10 +299,20 @@ select.fld option{background:var(--bg3)}
 
   /* Report */
   .report-stat .rs-val{font-size:15px}
+
+  /* Kasbon mobile */
+  .menu-tab{font-size:11px;padding:8px 10px}
+  .menu-tab i{font-size:12px!important}
+  .kcol{flex:0 0 80vw;max-width:300px}
+  .ktable{font-size:11.5px;min-width:600px}
+  .ktable th,.ktable td{padding:7px 8px}
+  .batch-row{grid-template-columns:1fr 90px 80px 80px 28px;gap:4px}
+  .batch-row input,.batch-row select{font-size:16px!important;padding:5px 6px}
 }
 
 @media (max-width: 380px) {
   .col{flex:0 0 88vw}
+  .kcol{flex:0 0 88vw}
 }
 </style>
 </head>
@@ -284,6 +336,7 @@ select.fld option{background:var(--bg3)}
         <option value="sales">Sales</option>
         <option value="divisi_marketing">Divisi Marketing</option>
         <option value="umum">Umum</option>
+        <option value="kepala_produksi">Kepala Produksi</option>
       </select>
     </div>
     <div class="login-field">
@@ -304,7 +357,7 @@ select.fld option{background:var(--bg3)}
   <div class="topbar">
     <div class="topbar-logo">
       <div class="tl-ico"><i class="ti ti-building-bank" style="font-size:14px;color:#0d1117"></i></div>
-      <h1>Kanban Transaksi Pembayaran</h1>
+      <h1 id="app-title">Kanban Transaksi Pembayaran</h1>
     </div>
     <span class="role-badge" id="topbar-role"></span>
     <span style="font-size:12px;color:var(--txt2);margin-left:4px" id="topbar-name"></span>
@@ -317,24 +370,60 @@ select.fld option{background:var(--bg3)}
       <button class="tb-btn" onclick="logout()"><i class="ti ti-logout" style="font-size:13px"></i> Keluar</button>
     </div>
   </div>
-  <div class="search-bar" id="search-bar">
-    <div class="search-input-wrap">
-      <i class="ti ti-search" style="font-size:14px;color:var(--txt3)"></i>
-      <input type="text" id="search-input" placeholder="Cari ID, nama, vendor, pengaju..." oninput="applyFilters()">
-      <button id="search-clear" onclick="clearSearch()" style="display:none"><i class="ti ti-x" style="font-size:13px"></i></button>
-    </div>
-    <select id="filter-dept" class="search-select" onchange="applyFilters()">
-      <option value="">Semua Dept</option>
-    </select>
-    <select id="filter-tipe" class="search-select" onchange="applyFilters()">
-      <option value="">Semua Tipe</option>
-    </select>
-    <input type="date" id="filter-date-from" class="search-select" onchange="applyFilters()" title="Dari tanggal">
-    <input type="date" id="filter-date-to" class="search-select" onchange="applyFilters()" title="Sampai tanggal">
-    <button class="tb-btn" onclick="resetFilters()" style="flex-shrink:0"><i class="ti ti-filter-x" style="font-size:13px"></i></button>
+
+  <!-- MENU TAB: Pembayaran vs Kasbon -->
+  <div class="menu-tabs" id="menu-tabs" style="display:none">
+    <button class="menu-tab active" id="tab-pembayaran" onclick="switchMenu('pembayaran')">
+      <i class="ti ti-building-bank" style="font-size:13px"></i> Pembayaran
+    </button>
+    <button class="menu-tab" id="tab-kasbon" onclick="switchMenu('kasbon')">
+      <i class="ti ti-cash-banknote" style="font-size:13px"></i> Kasbon &amp; Upah
+    </button>
   </div>
-  <div class="stats-bar" id="stats-bar"></div>
-  <div class="board-wrap" id="board"></div>
+
+  <!-- ═══ KONTEN: PEMBAYARAN ═══ -->
+  <div id="menu-content-pembayaran">
+    <div class="search-bar" id="search-bar">
+      <div class="search-input-wrap">
+        <i class="ti ti-search" style="font-size:14px;color:var(--txt3)"></i>
+        <input type="text" id="search-input" placeholder="Cari ID, nama, vendor, pengaju..." oninput="applyFilters()">
+        <button id="search-clear" onclick="clearSearch()" style="display:none"><i class="ti ti-x" style="font-size:13px"></i></button>
+      </div>
+      <select id="filter-dept" class="search-select" onchange="applyFilters()">
+        <option value="">Semua Dept</option>
+      </select>
+      <select id="filter-tipe" class="search-select" onchange="applyFilters()">
+        <option value="">Semua Tipe</option>
+      </select>
+      <input type="date" id="filter-date-from" class="search-select" onchange="applyFilters()" title="Dari tanggal">
+      <input type="date" id="filter-date-to" class="search-select" onchange="applyFilters()" title="Sampai tanggal">
+      <button class="tb-btn" onclick="resetFilters()" style="flex-shrink:0"><i class="ti ti-filter-x" style="font-size:13px"></i></button>
+    </div>
+    <div class="stats-bar" id="stats-bar"></div>
+    <div class="board-wrap" id="board"></div>
+  </div>
+
+  <!-- ═══ KONTEN: KASBON & UPAH ═══ -->
+  <div id="menu-content-kasbon" style="display:none;flex:1;display:none;flex-direction:column;overflow:hidden">
+    <div class="menu-tabs" id="kasbon-sub-tabs" style="border-top:1px solid var(--bdr)">
+      <button class="menu-tab active" onclick="switchKasbonSubTab('master')" id="ksub-master">
+        <i class="ti ti-users" style="font-size:13px"></i> Master Pekerja
+      </button>
+      <button class="menu-tab" onclick="switchKasbonSubTab('kasbon')" id="ksub-kasbon">
+        <i class="ti ti-cash-banknote" style="font-size:13px"></i> Pengajuan Kasbon
+      </button>
+      <button class="menu-tab" onclick="switchKasbonSubTab('gaji_mingguan')" id="ksub-gaji-mingguan">
+        <i class="ti ti-calendar-week" style="font-size:13px"></i> Gaji Mingguan
+      </button>
+      <button class="menu-tab" onclick="switchKasbonSubTab('gaji_bulanan')" id="ksub-gaji-bulanan">
+        <i class="ti ti-calendar-month" style="font-size:13px"></i> Gaji Bulanan
+      </button>
+      <button class="tb-btn" id="btn-init-kasbon-db" onclick="confirmInitKasbonDB()" style="margin-left:auto;border-color:var(--orange);color:var(--orange);flex-shrink:0">
+        <i class="ti ti-database" style="font-size:13px"></i> Init DB
+      </button>
+    </div>
+    <div id="kasbon-body" style="flex:1;overflow-y:auto;padding:14px"></div>
+  </div>
 </div>
 
 <!-- LOADER -->
@@ -356,13 +445,14 @@ select.fld option{background:var(--bg3)}
 const API = 'https://script.google.com/macros/s/AKfycbxb0bUxkWGda81Y9Aq0L9oxjmX9nMr-x90Gxrf9eU40FBEZSaTnoQ9XuwcdPtqxz0ZbTA/exec';
 
 const PASSWORDS = {
-  owner:             'useradmin123',
-  finance:           'superman999',
-  releaser:          'bosziyad123',
-  divisi_produksi:   'hahahihi',
-  sales:             'pritha123',
-  divisi_marketing:  'marketing1473',
+  owner:             'owner123',
+  finance:           'finance123',
+  releaser:          'releaser123',
+  divisi_produksi:   'produksi123',
+  sales:             'sales123',
+  divisi_marketing:  'marketing123',
   umum:              'tardaumum123',
+  kepala_produksi:   'hanyapakoen999',
 };
 
 const ROLE_LABELS = {
@@ -373,7 +463,17 @@ const ROLE_LABELS = {
   sales:            'Sales',
   divisi_marketing: 'Divisi Marketing',
   umum:             'Umum',
+  kepala_produksi:  'Kepala Produksi',
 };
+
+// Role yang boleh akses menu Kasbon & Upah
+const KASBON_ROLES = ['owner','finance','releaser','kepala_produksi'];
+function canAccessKasbon() {
+  return KASBON_ROLES.includes(currentUser?.role);
+}
+function isKepalaProduksi() {
+  return currentUser?.role === 'kepala_produksi';
+}
 
 const COLS = [
   {id:'pengajuan',        label:'Pengajuan Dana',   icon:'ti-file-plus',      bg:'rgba(56,139,253,.15)',  fg:'#79c0ff', acc:'#388bfd'},
@@ -394,6 +494,42 @@ const PAJAK_TYPES = [
 
 const DEPTS = ['Keuangan','Operasional','HRD','IT','Procurement','Umum','Direksi','Produksi','Sales','Marketing'];
 const TIPES = ['Pembelian Barang','Pembelian BBM','Pembayaran Tagihan','Biaya Operasional','Honor/Jasa','Sewa','Lainnya'];
+
+// ─── Kasbon & Upah: konstanta ─────────────────────────────────
+const KATEGORI_PEKERJA = [
+  { id:'borongan',            label:'Borongan (Penjahit)' },
+  { id:'bulanan_penjahit',    label:'Bulanan - Penjahit' },
+  { id:'bulanan_finishing',   label:'Bulanan - Finishing' },
+];
+function kategoriLabel(id) {
+  return KATEGORI_PEKERJA.find(k=>k.id===id)?.label || id;
+}
+function isKategoriBulanan(id) {
+  return id === 'bulanan_penjahit' || id === 'bulanan_finishing';
+}
+
+const KASBON_COLS = [
+  {id:'pengajuan',  label:'Pengajuan',  icon:'ti-cash-banknote', bg:'rgba(56,139,253,.15)', fg:'#79c0ff', acc:'#388bfd'},
+  {id:'verifikasi', label:'Verifikasi', icon:'ti-clipboard-check',bg:'rgba(188,140,255,.15)',fg:'#d2a8ff', acc:'#bc8cff'},
+  {id:'releaser',   label:'Releaser BOD',icon:'ti-building-bank', bg:'rgba(248,81,73,.15)', fg:'#ffa198', acc:'#f85149'},
+  {id:'bukti',      label:'Bukti Transaksi',icon:'ti-circle-check',bg:'rgba(57,211,83,.15)', fg:'#39d353', acc:'#39d353'},
+];
+
+const GAJI_COLS = [
+  {id:'pengajuan',  label:'Pengajuan',  icon:'ti-file-plus',     bg:'rgba(56,139,253,.15)', fg:'#79c0ff', acc:'#388bfd'},
+  {id:'verifikasi', label:'Verifikasi', icon:'ti-clipboard-check',bg:'rgba(188,140,255,.15)',fg:'#d2a8ff', acc:'#bc8cff'},
+  {id:'maker',      label:'Maker & Approver',icon:'ti-user-check',bg:'rgba(63,185,80,.15)', fg:'#7ee787', acc:'#3fb950'},
+  {id:'releaser',   label:'Releaser BOD',icon:'ti-building-bank', bg:'rgba(248,81,73,.15)', fg:'#ffa198', acc:'#f85149'},
+  {id:'bukti',      label:'Bukti Transaksi',icon:'ti-circle-check',bg:'rgba(57,211,83,.15)', fg:'#39d353', acc:'#39d353'},
+];
+
+// ─── State Kasbon ──────────────────────────────────────────────
+let currentMenu = 'pembayaran'; // 'pembayaran' | 'kasbon'
+let pekerjaList = [];
+let kasbonList = [];
+let gajiMingguanList = [];
+let gajiBulananList = [];
+let kasbonSubTab = 'master'; // 'master' | 'kasbon' | 'gaji_mingguan' | 'gaji_bulanan'
 
 let currentUser = null;
 let trxs = [];
@@ -464,6 +600,23 @@ function enterApp(user) {
   if (can('report') || isOwner()) document.getElementById('btn-arsip').style.display = 'flex';
   if (isOwner()) document.getElementById('btn-initdb').style.display = 'flex';
   if (can('report') || isOwner()) document.getElementById('btn-dashboard').style.display = 'flex';
+
+  // Menu tab Pembayaran/Kasbon hanya muncul kalau role bisa akses Kasbon
+  const menuTabs = document.getElementById('menu-tabs');
+  if (canAccessKasbon()) {
+    menuTabs.style.display = 'flex';
+    if (isKepalaProduksi()) {
+      // Kepala Produksi tidak punya akses Kanban Pembayaran, langsung ke Kasbon
+      document.getElementById('tab-pembayaran').style.display = 'none';
+      switchMenu('kasbon');
+    } else {
+      switchMenu('pembayaran');
+    }
+  } else {
+    menuTabs.style.display = 'none';
+    switchMenu('pembayaran');
+  }
+
   populateFilterOptions();
   loadAll();
 }
@@ -1567,6 +1720,1085 @@ async function showArsip() {
       </div>
     </div>
   </div>`;
+}
+
+// ════════════════════════════════════════════════════════════
+//  KASBON & UPAH — Menu Switching
+// ════════════════════════════════════════════════════════════
+function switchMenu(menu) {
+  currentMenu = menu;
+  document.getElementById('tab-pembayaran').classList.toggle('active', menu==='pembayaran');
+  document.getElementById('tab-kasbon').classList.toggle('active', menu==='kasbon');
+  document.getElementById('menu-content-pembayaran').style.display = menu==='pembayaran' ? 'flex' : 'none';
+  document.getElementById('menu-content-pembayaran').style.flexDirection = 'column';
+  document.getElementById('menu-content-pembayaran').style.flex = '1';
+  document.getElementById('menu-content-pembayaran').style.overflow = 'hidden';
+  document.getElementById('menu-content-kasbon').style.display = menu==='kasbon' ? 'flex' : 'none';
+
+  document.getElementById('app-title').textContent = menu==='pembayaran'
+    ? 'Kanban Transaksi Pembayaran' : 'Kasbon & Upah Pekerja';
+
+  if (menu === 'kasbon') {
+    if (isOwner()) document.getElementById('btn-init-kasbon-db').style.display = 'flex';
+    else document.getElementById('btn-init-kasbon-db').style.display = 'none';
+    loadKasbonAll();
+  }
+}
+
+function switchKasbonSubTab(tab) {
+  kasbonSubTab = tab;
+  ['master','kasbon','gaji_mingguan','gaji_bulanan'].forEach(t => {
+    document.getElementById('ksub-'+t.replace('_','-'))?.classList.toggle('active', t===tab);
+  });
+  renderKasbonBody();
+}
+
+// ─── Load semua data Kasbon ───────────────────────────────────
+async function loadKasbonAll() {
+  showLoader('Memuat data kasbon...');
+  try {
+    const [rPekerja, rKasbon, rGMing, rGBulan] = await Promise.all([
+      apiGet({action:'getPekerja'}),
+      apiGet({action:'getKasbon'}),
+      apiGet({action:'getGajiMingguan'}),
+      apiGet({action:'getGajiBulanan'}),
+    ]);
+    if (rPekerja.ok) pekerjaList = rPekerja.data || [];
+    if (rKasbon.ok) kasbonList = rKasbon.data || [];
+    if (rGMing.ok) gajiMingguanList = rGMing.data || [];
+    if (rGBulan.ok) gajiBulananList = rGBulan.data || [];
+  } catch(e) {
+    showToast('Gagal memuat data kasbon','ti-alert-triangle');
+  }
+  renderKasbonBody();
+  hideLoader();
+}
+
+function renderKasbonBody() {
+  const body = document.getElementById('kasbon-body');
+  if (!body) return;
+  if (kasbonSubTab === 'master')          body.innerHTML = renderMasterPekerjaHTML();
+  else if (kasbonSubTab === 'kasbon')      body.innerHTML = renderKasbonBoardHTML();
+  else if (kasbonSubTab === 'gaji_mingguan') body.innerHTML = renderGajiMingguanBoardHTML();
+  else if (kasbonSubTab === 'gaji_bulanan')  body.innerHTML = renderGajiBulananBoardHTML();
+  attachKasbonClickHandlers();
+}
+
+function attachKasbonClickHandlers() {
+  if (kasbonSubTab === 'master') {
+    pekerjaList.forEach(p => {
+      const el = document.getElementById('pkj-row-'+p.id);
+      if (el) el.onclick = () => openPekerjaDetailModal(p.id);
+    });
+  } else if (kasbonSubTab === 'kasbon') {
+    kasbonList.forEach(k => {
+      const el = document.getElementById('kcard-'+k.id);
+      if (el) el.onclick = () => openKasbonDetailModal(k.id);
+    });
+  } else if (kasbonSubTab === 'gaji_mingguan') {
+    gajiMingguanList.forEach(g => {
+      const el = document.getElementById('gmg-card-'+g.id);
+      if (el) el.onclick = () => openGajiMingguanDetailModal(g.id);
+    });
+  } else if (kasbonSubTab === 'gaji_bulanan') {
+    gajiBulananList.forEach(g => {
+      const el = document.getElementById('gbl-card-'+g.id);
+      if (el) el.onclick = () => openGajiBulananDetailModal(g.id);
+    });
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  A. MASTER DATA PEKERJA
+// ════════════════════════════════════════════════════════════
+function renderMasterPekerjaHTML() {
+  const canEdit = isOwner() || can('finance');
+  const totalSaldo = pekerjaList.reduce((s,p)=>s+(p.saldoKasbon||0),0);
+
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <div class="stat-chip"><i class="ti ti-users" style="font-size:13px;color:var(--blue)"></i><span>Total Pekerja</span><strong>${pekerjaList.length}</strong></div>
+        <div class="stat-chip"><i class="ti ti-cash-banknote" style="font-size:13px;color:var(--orange)"></i><span>Total Saldo Kasbon</span><strong>${fmt(totalSaldo)}</strong></div>
+      </div>
+      ${canEdit ? `<button class="btn btn-primary" style="min-height:36px;padding:7px 14px" onclick="openAddPekerjaModal()"><i class="ti ti-plus" style="font-size:14px"></i> Tambah Pekerja</button>` : ''}
+    </div>
+    <div class="ktable-wrap">
+      <table class="ktable">
+        <thead><tr>
+          <th>Nama</th><th>Kategori</th><th>NIK</th><th>Rekening</th><th>Saldo Kasbon</th>
+        </tr></thead>
+        <tbody>
+          ${pekerjaList.length===0 ? `<tr><td colspan="5" style="text-align:center;color:var(--txt3);padding:20px">Belum ada data pekerja.</td></tr>` :
+          pekerjaList.map(p => `
+            <tr id="pkj-row-${p.id}">
+              <td style="font-weight:600">${esc(p.nama)}</td>
+              <td><span class="kcat-badge kcat-${p.kategori}">${esc(kategoriLabel(p.kategori))}</span></td>
+              <td style="color:var(--txt2)">${esc(p.nik||'-')}</td>
+              <td style="color:var(--txt2);font-size:11.5px">${esc(p.noRekening||'-')} <span style="color:var(--txt3)">(${esc(p.namaBank||'-')})</span></td>
+              <td class="${p.saldoKasbon>0?'ksaldo-pos':'ksaldo-zero'}">${fmt(p.saldoKasbon||0)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function openAddPekerjaModal() {
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:rgba(56,139,253,.15)"><i class="ti ti-user-plus" style="font-size:16px;color:#79c0ff"></i></div>
+        <div><h2>Tambah Pekerja Baru</h2><p>Data master pekerja</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="section"><label>Nama</label><input type="text" class="fld" id="pk-nama" placeholder="Nama lengkap pekerja"></div>
+        <div class="row2 section">
+          <div><label>NIK</label><input type="text" class="fld" id="pk-nik" placeholder="Nomor KTP"></div>
+          <div>
+            <label>Kategori <span style="color:var(--red)">*</span></label>
+            <select class="fld" id="pk-kategori" onchange="onKategoriPekerjaChange()">
+              ${KATEGORI_PEKERJA.map(k=>`<option value="${k.id}">${k.label}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="row2 section">
+          <div><label>No. Rekening</label><input type="text" class="fld" id="pk-rek" placeholder="Nomor rekening"></div>
+          <div><label>Nama Bank</label><input type="text" class="fld" id="pk-bank" placeholder="Contoh: BCA, Mandiri..."></div>
+        </div>
+        <div class="section"><label>Nama Tujuan Rekening</label><input type="text" class="fld" id="pk-tujuan" placeholder="Nama pemilik rekening"></div>
+        <div class="section" id="pk-gajifix-wrap" style="display:none">
+          <label>Gaji Fix Bulanan (Rp)</label>
+          <input type="text" class="fld" id="pk-gajifix" placeholder="Contoh: 3.000.000" inputmode="numeric" oninput="formatNominalInput(this)">
+        </div>
+        <div class="section">
+          <label>Saldo Kasbon Awal (Rp) <span style="color:var(--txt3);font-weight:400;text-transform:none">(isi jika sudah ada hutang sebelumnya)</span></label>
+          <input type="text" class="fld" id="pk-saldoawal" placeholder="Contoh: 500.000" inputmode="numeric" oninput="formatNominalInput(this)">
+        </div>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-primary" onclick="submitAddPekerja()"><i class="ti ti-check" style="font-size:14px"></i> Simpan Pekerja</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function onKategoriPekerjaChange() {
+  const kat = document.getElementById('pk-kategori').value;
+  document.getElementById('pk-gajifix-wrap').style.display = isKategoriBulanan(kat) ? 'block' : 'none';
+}
+
+async function submitAddPekerja() {
+  const nama = document.getElementById('pk-nama')?.value.trim();
+  const kategori = document.getElementById('pk-kategori')?.value;
+  if (!nama || !kategori) { showToast('Nama dan kategori wajib diisi','ti-alert-triangle'); return; }
+
+  const data = {
+    nama,
+    nik: document.getElementById('pk-nik')?.value.trim() || '',
+    kategori,
+    noRekening: document.getElementById('pk-rek')?.value.trim() || '',
+    namaBank: document.getElementById('pk-bank')?.value.trim() || '',
+    namaTujuanRekening: document.getElementById('pk-tujuan')?.value.trim() || '',
+    gajiFix: Number(String(document.getElementById('pk-gajifix')?.value||'').replace(/\D/g,'')) || 0,
+    saldoKasbonAwal: Number(String(document.getElementById('pk-saldoawal')?.value||'').replace(/\D/g,'')) || 0,
+  };
+
+  showLoader('Menyimpan pekerja...');
+  try {
+    const res = await apiPost({action:'addPekerja', data});
+    if (res.ok) {
+      showToast('Pekerja '+nama+' berhasil ditambahkan','ti-user-plus');
+      closeModal();
+      await loadKasbonAll();
+    } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
+  } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
+  hideLoader();
+}
+
+async function openPekerjaDetailModal(id) {
+  const p = pekerjaList.find(x=>x.id===id);
+  if (!p) return;
+  const canEdit = isOwner() || can('finance');
+
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:rgba(56,139,253,.15)"><i class="ti ti-user" style="font-size:16px;color:#79c0ff"></i></div>
+        <div><h2>${esc(p.nama)}</h2><p>${p.id} · ${esc(kategoriLabel(p.kategori))}</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="section">
+          <label>Informasi Pekerja</label>
+          <div class="info-grid">
+            <span class="k">NIK</span><span class="v plain">${esc(p.nik||'-')}</span>
+            <span class="k">Kategori</span><span class="v plain">${esc(kategoriLabel(p.kategori))}</span>
+            <span class="k">No. Rekening</span><span class="v">${esc(p.noRekening||'-')} (${esc(p.namaBank||'-')})</span>
+            <span class="k">Nama Tujuan</span><span class="v plain">${esc(p.namaTujuanRekening||'-')}</span>
+            ${isKategoriBulanan(p.kategori) ? `<span class="k">Gaji Fix</span><span class="v">${fmt(p.gajiFix||0)}</span>` : ''}
+            <span class="k">Saldo Kasbon</span><span class="v" style="color:var(--orange);font-weight:700">${fmt(p.saldoKasbon||0)}</span>
+          </div>
+        </div>
+        <div class="section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <label style="margin-bottom:0">Riwayat Kasbon</label>
+            <button class="tb-btn" onclick="loadRiwayatKasbonModal('${id}')" style="font-size:11px;padding:3px 8px"><i class="ti ti-history" style="font-size:11px"></i> Muat Riwayat</button>
+          </div>
+          <div id="riwayat-container-${id}" style="font-size:12px;color:var(--txt3)">Klik "Muat Riwayat" untuk melihat histori.</div>
+        </div>
+      </div>
+      ${canEdit ? `
+      <div class="action-area">
+        <button class="btn btn-warn" onclick="openEditPekerjaModal('${id}')"><i class="ti ti-edit" style="font-size:14px"></i> Edit Data Pekerja</button>
+      </div>` : ''}
+    </div>
+  </div>`;
+}
+
+async function loadRiwayatKasbonModal(pekerjaId) {
+  const container = document.getElementById('riwayat-container-'+pekerjaId);
+  if (!container) return;
+  container.innerHTML = '<span style="color:var(--txt3)">Memuat...</span>';
+  try {
+    const res = await apiGet({action:'getRiwayatKasbon', pekerjaId});
+    const data = res.ok ? res.data : [];
+    if (data.length === 0) { container.innerHTML = '<span style="color:var(--txt3)">Belum ada riwayat.</span>'; return; }
+    container.innerHTML = data.map(r => {
+      const isNaik = r.saldoSesudah > r.saldoSebelum;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+        <div>
+          <div style="font-size:12px;color:var(--txt)">${esc(r.keterangan || (isNaik?'Penambahan kasbon':'Potongan kasbon'))}</div>
+          <div style="font-size:10.5px;color:var(--txt3)">${fmtD(r.createdAt)}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:12.5px;font-weight:600;color:${isNaik?'var(--orange)':'var(--green)'}">${isNaik?'+':'-'}${fmt(r.nominal)}</div>
+          <div style="font-size:10px;color:var(--txt3)">Saldo: ${fmt(r.saldoSesudah)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    container.innerHTML = '<span style="color:var(--red)">Gagal memuat riwayat.</span>';
+  }
+}
+
+function openEditPekerjaModal(id) {
+  const p = pekerjaList.find(x=>x.id===id);
+  if (!p) return;
+  closeModal();
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:rgba(210,153,34,.15)"><i class="ti ti-edit" style="font-size:16px;color:#e3b341"></i></div>
+        <div><h2>Edit Pekerja</h2><p>${p.id}</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="section"><label>Nama</label><input type="text" class="fld" id="pk-nama" value="${esc(p.nama)}"></div>
+        <div class="row2 section">
+          <div><label>NIK</label><input type="text" class="fld" id="pk-nik" value="${esc(p.nik||'')}"></div>
+          <div>
+            <label>Kategori</label>
+            <select class="fld" id="pk-kategori" onchange="onKategoriPekerjaChange()">
+              ${KATEGORI_PEKERJA.map(k=>`<option value="${k.id}"${k.id===p.kategori?' selected':''}>${k.label}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="row2 section">
+          <div><label>No. Rekening</label><input type="text" class="fld" id="pk-rek" value="${esc(p.noRekening||'')}"></div>
+          <div><label>Nama Bank</label><input type="text" class="fld" id="pk-bank" value="${esc(p.namaBank||'')}"></div>
+        </div>
+        <div class="section"><label>Nama Tujuan Rekening</label><input type="text" class="fld" id="pk-tujuan" value="${esc(p.namaTujuanRekening||'')}"></div>
+        <div class="section" id="pk-gajifix-wrap" style="display:${isKategoriBulanan(p.kategori)?'block':'none'}">
+          <label>Gaji Fix Bulanan (Rp)</label>
+          <input type="text" class="fld" id="pk-gajifix" value="${p.gajiFix?Number(p.gajiFix).toLocaleString('id-ID'):''}" inputmode="numeric" oninput="formatNominalInput(this)">
+        </div>
+        <input type="hidden" id="pk-editid" value="${p.id}">
+      </div>
+      <div class="action-area">
+        <button class="btn btn-primary" onclick="submitEditPekerja()"><i class="ti ti-check" style="font-size:14px"></i> Simpan Perubahan</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function submitEditPekerja() {
+  const id = document.getElementById('pk-editid')?.value;
+  const data = {
+    nama: document.getElementById('pk-nama')?.value.trim(),
+    nik: document.getElementById('pk-nik')?.value.trim(),
+    kategori: document.getElementById('pk-kategori')?.value,
+    noRekening: document.getElementById('pk-rek')?.value.trim(),
+    namaBank: document.getElementById('pk-bank')?.value.trim(),
+    namaTujuanRekening: document.getElementById('pk-tujuan')?.value.trim(),
+    gajiFix: Number(String(document.getElementById('pk-gajifix')?.value||'').replace(/\D/g,'')) || 0,
+  };
+  showLoader('Menyimpan...');
+  try {
+    const res = await apiPost({action:'editPekerja', id, data});
+    if (res.ok) {
+      showToast('Data pekerja diupdate','ti-check');
+      closeModal();
+      await loadKasbonAll();
+    } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
+  } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
+  hideLoader();
+}
+
+// ════════════════════════════════════════════════════════════
+//  B. KANBAN PENGAJUAN KASBON (4 kolom)
+// ════════════════════════════════════════════════════════════
+function canKasbonInput() {
+  return isKepalaProduksi() || isOwner();
+}
+function canKasbonFinance() {
+  return can('finance') || isOwner();
+}
+function canKasbonReleaser() {
+  return can('releaser') || isOwner();
+}
+
+function renderKasbonBoardHTML() {
+  const canAdd = canKasbonInput();
+  return `
+    ${canAdd ? `<div style="margin-bottom:12px"><button class="btn btn-primary" style="min-height:36px;padding:7px 14px" onclick="openAddKasbonModal()"><i class="ti ti-plus" style="font-size:14px"></i> Ajukan Kasbon</button></div>` : ''}
+    <div class="kboard-wrap">
+      ${KASBON_COLS.map(col => {
+        const cards = kasbonList.filter(k => k.status === col.id);
+        return `
+        <div class="kcol">
+          <div class="kcol-hdr">
+            <div class="ico" style="background:${col.bg}"><i class="ti ${col.icon}" style="font-size:12px;color:${col.fg}"></i></div>
+            <span class="label">${col.label}</span>
+            <span class="cnt" style="background:${col.bg};color:${col.fg}">${cards.length}</span>
+          </div>
+          <div class="kcards">
+            ${cards.length===0?`<div style="text-align:center;padding:16px 8px;font-size:11px;color:var(--txt3)">Tidak ada</div>`:
+            cards.map(k => `
+              <div class="kcard" id="kcard-${k.id}">
+                <div class="kcard-id">${k.id}</div>
+                <div class="kcard-title">${esc(k.namaPekerja)}</div>
+                <div class="kcard-sub">${esc(k.keterangan||'-')}</div>
+                <div class="kcard-amount">${fmt(k.nominal)}</div>
+              </div>`).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function openAddKasbonModal() {
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:rgba(56,139,253,.15)"><i class="ti ti-cash-banknote" style="font-size:16px;color:#79c0ff"></i></div>
+        <div><h2>Ajukan Kasbon</h2><p>Pengajuan kasbon baru</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="section">
+          <label>Nama Pekerja <span style="color:var(--red)">*</span></label>
+          <select class="fld" id="ksb-pekerja">
+            <option value="">— Pilih Pekerja —</option>
+            ${pekerjaList.filter(p=>p.aktif!==false).map(p=>`<option value="${p.id}">${esc(p.nama)} (${esc(kategoriLabel(p.kategori))}) — Saldo: ${fmt(p.saldoKasbon||0)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="section">
+          <label>Nominal Kasbon (Rp) <span style="color:var(--red)">*</span></label>
+          <input type="text" class="fld" id="ksb-nominal" placeholder="Contoh: 500.000" inputmode="numeric" oninput="formatNominalInput(this)">
+        </div>
+        <div class="section">
+          <label>Keterangan</label>
+          <textarea class="fld" id="ksb-keterangan" placeholder="Keperluan kasbon..."></textarea>
+        </div>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-primary" onclick="submitAddKasbon()"><i class="ti ti-send" style="font-size:14px"></i> Ajukan Kasbon</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function submitAddKasbon() {
+  const pekerjaId = document.getElementById('ksb-pekerja')?.value;
+  const nominal = Number(String(document.getElementById('ksb-nominal')?.value||'').replace(/\D/g,''));
+  if (!pekerjaId || !nominal) { showToast('Pilih pekerja dan isi nominal','ti-alert-triangle'); return; }
+  const pekerja = pekerjaList.find(p=>p.id===pekerjaId);
+
+  const data = {
+    pekerjaId, namaPekerja: pekerja?.nama || '',
+    nominal, keterangan: document.getElementById('ksb-keterangan')?.value.trim() || '',
+  };
+  showLoader('Menyimpan pengajuan kasbon...');
+  try {
+    const res = await apiPost({action:'addKasbon', data});
+    if (res.ok) {
+      showToast('Kasbon '+res.id+' berhasil diajukan','ti-cash-banknote');
+      closeModal();
+      await loadKasbonAll();
+    } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
+  } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
+  hideLoader();
+}
+
+async function updateKasbonStatus(id, patch, histMsg) {
+  showLoader('Menyimpan...');
+  try {
+    const res = await apiPost({action:'updateKasbon', id, patch, histMsg});
+    if (res.ok) {
+      const idx = kasbonList.findIndex(k=>k.id===id);
+      if (idx!==-1) kasbonList[idx] = {...kasbonList[idx], ...patch};
+      renderKasbonBody();
+    } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
+  } catch(e) { showToast('Error koneksi','ti-alert-triangle'); }
+  hideLoader();
+}
+
+function openKasbonDetailModal(id) {
+  const k = kasbonList.find(x=>x.id===id);
+  if (!k) return;
+  const col = KASBON_COLS.find(c=>c.id===k.status);
+
+  let actionHTML = '';
+  if (k.status === 'pengajuan' && canKasbonFinance()) {
+    actionHTML = `<div class="action-area">
+      <button class="btn btn-success" onclick="updateKasbonAndClose('${id}',{status:'verifikasi'},'Kasbon diverifikasi Finance')"><i class="ti ti-circle-check" style="font-size:14px"></i> Verifikasi & Lanjutkan</button>
+      <button class="btn btn-danger" onclick="updateKasbonAndClose('${id}',{status:'ditolak'},'Kasbon ditolak Finance')"><i class="ti ti-x" style="font-size:14px"></i> Tolak</button>
+    </div>`;
+  } else if (k.status === 'verifikasi' && canKasbonFinance()) {
+    actionHTML = `<div class="action-area">
+      <button class="btn btn-primary" onclick="updateKasbonAndClose('${id}',{status:'releaser'},'Kasbon dikirim ke Releaser BOD')"><i class="ti ti-send" style="font-size:14px"></i> Kirim ke Releaser BOD</button>
+    </div>`;
+  } else if (k.status === 'releaser' && canKasbonReleaser()) {
+    actionHTML = `<div class="action-area">
+      <button class="btn btn-teal" onclick="doReleaseKasbon('${id}')"><i class="ti ti-player-play" style="font-size:14px"></i> Tandai Sudah Dieksekusi</button>
+    </div>`;
+  } else if (k.status === 'bukti') {
+    actionHTML = `<div class="action-area">
+      <div style="padding:10px 12px;background:var(--green-bg);border-radius:var(--radius);border:1px solid rgba(63,185,80,.3);margin-bottom:8px">
+        <i class="ti ti-circle-check" style="font-size:15px;color:var(--green)"></i>
+        <span style="font-size:13px;font-weight:600;color:var(--green);margin-left:6px">${esc(k.buktNo||'Selesai')}</span>
+      </div>
+      <div id="kasbon-files-${id}" style="font-size:12px;color:var(--txt3)">Memuat lampiran...</div>
+      ${canKasbonFinance() ? `
+      <div style="margin-top:8px">
+        <label class="slbl">Upload Bukti Transfer</label>
+        <div class="upload-zone" id="uz-ksbfile" onclick="document.getElementById('fi-ksbfile').click()">
+          <div class="uz-ico"><i class="ti ti-cloud-upload"></i></div>
+          <p>Klik untuk upload bukti</p>
+          <input type="file" id="fi-ksbfile" accept=".pdf,.jpg,.jpeg,.png" onchange="uploadKasbonFileNow('${id}','kasbon',this)">
+        </div>
+      </div>` : ''}
+    </div>`;
+    loadKasbonFilesInto(id, 'kasbon');
+  }
+
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:${col.bg}"><i class="ti ${col.icon}" style="font-size:16px;color:${col.fg}"></i></div>
+        <div><h2>${esc(k.namaPekerja)}</h2><p>${k.id}</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="section">
+          <div class="info-grid">
+            <span class="k">Nominal</span><span class="v" style="font-weight:700">${fmt(k.nominal)}</span>
+            <span class="k">Keterangan</span><span class="v plain">${esc(k.keterangan||'-')}</span>
+            <span class="k">Tanggal</span><span class="v">${fmtD(k.createdAt)}</span>
+          </div>
+        </div>
+        <div class="section"><label>Riwayat</label>${renderHistory(k.history)}</div>
+      </div>
+      ${actionHTML}
+    </div>
+  </div>`;
+}
+
+async function updateKasbonAndClose(id, patch, histMsg) {
+  await updateKasbonStatus(id, patch, histMsg);
+  closeModal();
+}
+
+async function doReleaseKasbon(id) {
+  const bt = 'BTK-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000)+1000);
+  await updateKasbonStatus(id, {status:'bukti', buktNo:bt}, 'Kasbon dieksekusi BOD, bukti '+bt+' diterbitkan');
+  closeModal();
+}
+
+// ════════════════════════════════════════════════════════════
+//  C. KANBAN GAJI MINGGUAN (Borongan) — 5 kolom
+// ════════════════════════════════════════════════════════════
+function renderGajiMingguanBoardHTML() {
+  const canAdd = canKasbonInput();
+  return `
+    ${canAdd ? `<div style="margin-bottom:12px"><button class="btn btn-primary" style="min-height:36px;padding:7px 14px" onclick="openAddGajiMingguanModal()"><i class="ti ti-plus" style="font-size:14px"></i> Input Gaji Mingguan</button></div>` : ''}
+    <div class="kboard-wrap">
+      ${GAJI_COLS.map(col => {
+        const cards = gajiMingguanList.filter(g => g.status === col.id);
+        return `
+        <div class="kcol">
+          <div class="kcol-hdr">
+            <div class="ico" style="background:${col.bg}"><i class="ti ${col.icon}" style="font-size:12px;color:${col.fg}"></i></div>
+            <span class="label">${col.label}</span>
+            <span class="cnt" style="background:${col.bg};color:${col.fg}">${cards.length}</span>
+          </div>
+          <div class="kcards">
+            ${cards.length===0?`<div style="text-align:center;padding:16px 8px;font-size:11px;color:var(--txt3)">Tidak ada</div>`:
+            cards.map(g => `
+              <div class="kcard" id="gmg-card-${g.id}">
+                <div class="kcard-id">${g.id}</div>
+                <div class="kcard-title">Gaji ${fmtD(g.tanggalSabtu).split(',')[0]}</div>
+                <div class="kcard-sub">${(g.items||[]).length} pekerja borongan</div>
+                <div class="kcard-amount">${fmt(g.totalUpah)}</div>
+              </div>`).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function openAddGajiMingguanModal() {
+  const borongan = pekerjaList.filter(p => p.kategori === 'borongan' && p.aktif !== false);
+  window._gmingItems = [];
+
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:600px">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:rgba(56,139,253,.15)"><i class="ti ti-calendar-week" style="font-size:16px;color:#79c0ff"></i></div>
+        <div><h2>Input Gaji Mingguan</h2><p>Batch gaji untuk pekerja borongan</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="section"><label>Tanggal Sabtu</label><input type="date" class="fld" id="gmg-tanggal" value="${new Date().toISOString().slice(0,10)}"></div>
+        <div class="section">
+          <label>Tambah Pekerja Borongan</label>
+          <div style="display:flex;gap:6px">
+            <select class="fld" id="gmg-add-pekerja" style="flex:1">
+              <option value="">— Pilih Pekerja —</option>
+              ${borongan.map(p=>`<option value="${p.id}">${esc(p.nama)}</option>`).join('')}
+            </select>
+            <button class="btn btn-primary" style="min-height:38px;padding:0 14px" onclick="addGmingItem()"><i class="ti ti-plus" style="font-size:14px"></i></button>
+          </div>
+        </div>
+        <div class="section">
+          <div class="batch-row header"><span>Nama</span><span>Upah</span><span>Kasbon</span><span>Saldo</span><span></span></div>
+          <div id="gmg-items-list"></div>
+        </div>
+        <div class="batch-summary" id="gmg-summary"></div>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-primary" onclick="submitAddGajiMingguan()"><i class="ti ti-send" style="font-size:14px"></i> Ajukan Batch Gaji</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>`;
+  renderGmingItemsList();
+}
+
+function addGmingItem() {
+  const sel = document.getElementById('gmg-add-pekerja');
+  const pekerjaId = sel.value;
+  if (!pekerjaId) return;
+  if (window._gmingItems.find(it=>it.pekerjaId===pekerjaId)) { showToast('Pekerja sudah ada di list','ti-alert-triangle'); return; }
+  const p = pekerjaList.find(x=>x.id===pekerjaId);
+  window._gmingItems.push({ pekerjaId, nama: p.nama, nominalUpah: 0, potonganKasbon: 0, saldoKasbon: p.saldoKasbon||0 });
+  sel.value = '';
+  renderGmingItemsList();
+}
+
+function removeGmingItem(idx) {
+  window._gmingItems.splice(idx,1);
+  renderGmingItemsList();
+}
+
+function updateGmingItem(idx, field, val) {
+  window._gmingItems[idx][field] = Number(String(val||'').replace(/\D/g,'')) || 0;
+  renderGmingSummary();
+}
+
+function renderGmingItemsList() {
+  const container = document.getElementById('gmg-items-list');
+  if (!container) return;
+  container.innerHTML = window._gmingItems.map((it,i) => `
+    <div class="batch-row">
+      <span style="font-size:12px">${esc(it.nama)}</span>
+      <input type="text" class="fld" placeholder="Upah" value="${it.nominalUpah||''}" oninput="updateGmingItem(${i},'nominalUpah',this.value);formatNominalInput(this)">
+      <input type="text" class="fld" placeholder="Potongan" value="${it.potonganKasbon||''}" oninput="updateGmingItem(${i},'potonganKasbon',this.value);formatNominalInput(this)">
+      <span style="font-size:11px;color:var(--txt3)">${fmt(it.saldoKasbon||0)}</span>
+      <button onclick="removeGmingItem(${i})" style="background:none;border:none;color:var(--red);cursor:pointer"><i class="ti ti-trash" style="font-size:13px"></i></button>
+    </div>`).join('') || `<div style="text-align:center;padding:12px;color:var(--txt3);font-size:12px">Belum ada pekerja ditambahkan.</div>`;
+  renderGmingSummary();
+}
+
+function renderGmingSummary() {
+  const el = document.getElementById('gmg-summary');
+  if (!el) return;
+  const totalUpah = window._gmingItems.reduce((s,it)=>s+(it.nominalUpah||0),0);
+  const totalPotongan = window._gmingItems.reduce((s,it)=>s+(it.potonganKasbon||0),0);
+  el.innerHTML = `
+    <div class="tax-row"><span>Jumlah Pekerja</span><span>${window._gmingItems.length}</span></div>
+    <div class="tax-row"><span>Total Upah</span><span>${fmt(totalUpah)}</span></div>
+    <div class="tax-row total"><span>Total Potongan Kasbon</span><span>${fmt(totalPotongan)}</span></div>
+  `;
+}
+
+async function submitAddGajiMingguan() {
+  const tanggal = document.getElementById('gmg-tanggal')?.value;
+  if (!tanggal) { showToast('Pilih tanggal','ti-alert-triangle'); return; }
+  if (window._gmingItems.length===0) { showToast('Tambahkan minimal 1 pekerja','ti-alert-triangle'); return; }
+
+  showLoader('Menyimpan batch gaji mingguan...');
+  try {
+    const res = await apiPost({action:'addGajiMingguan', data:{ tanggalSabtu: tanggal, items: window._gmingItems }});
+    if (res.ok) {
+      showToast('Batch gaji '+res.id+' berhasil diajukan','ti-calendar-week');
+      closeModal();
+      await loadKasbonAll();
+    } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
+  } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
+  hideLoader();
+}
+
+function openGajiMingguanDetailModal(id) {
+  const g = gajiMingguanList.find(x=>x.id===id);
+  if (!g) return;
+  const col = GAJI_COLS.find(c=>c.id===g.status);
+  const items = g.items || [];
+
+  let actionHTML = '';
+  if (g.status === 'pengajuan' && canKasbonFinance()) {
+    actionHTML = `<div class="action-area"><button class="btn btn-success" onclick="updateGmingAndClose('${id}',{status:'verifikasi'},'Batch gaji diverifikasi Finance')"><i class="ti ti-circle-check" style="font-size:14px"></i> Verifikasi</button></div>`;
+  } else if (g.status === 'verifikasi' && canKasbonFinance()) {
+    actionHTML = `<div class="action-area"><button class="btn btn-success" onclick="doMakerGming('${id}')"><i class="ti ti-user-check" style="font-size:14px"></i> Buat & Approve Maker</button></div>`;
+  } else if (g.status === 'maker' && canKasbonFinance()) {
+    actionHTML = `<div class="action-area"><button class="btn btn-primary" onclick="updateGmingAndClose('${id}',{status:'releaser'},'Batch gaji dikirim ke Releaser BOD')"><i class="ti ti-send" style="font-size:14px"></i> Kirim ke Releaser BOD</button></div>`;
+  } else if (g.status === 'releaser' && canKasbonReleaser()) {
+    actionHTML = `<div class="action-area"><button class="btn btn-teal" onclick="doReleaseGming('${id}')"><i class="ti ti-player-play" style="font-size:14px"></i> Tandai Sudah Dieksekusi</button></div>`;
+  } else if (g.status === 'bukti') {
+    actionHTML = `<div class="action-area">
+      <div style="padding:10px 12px;background:var(--green-bg);border-radius:var(--radius);border:1px solid rgba(63,185,80,.3);margin-bottom:8px">
+        <i class="ti ti-circle-check" style="font-size:15px;color:var(--green)"></i>
+        <span style="font-size:13px;font-weight:600;color:var(--green);margin-left:6px">${esc(g.buktNo||'Selesai')}</span>
+      </div>
+      <div id="kasbon-files-${id}" style="font-size:12px;color:var(--txt3)">Memuat lampiran...</div>
+      ${canKasbonFinance() ? `
+      <div style="margin-top:8px">
+        <label class="slbl">Upload Bukti Transfer</label>
+        <div class="upload-zone" onclick="document.getElementById('fi-gmgfile').click()">
+          <div class="uz-ico"><i class="ti ti-cloud-upload"></i></div>
+          <p>Klik untuk upload bukti (bisa multi-file)</p>
+          <input type="file" id="fi-gmgfile" accept=".pdf,.jpg,.jpeg,.png" multiple onchange="uploadKasbonFileMulti('${id}','gaji_mingguan',this)">
+        </div>
+      </div>` : ''}
+    </div>`;
+    loadKasbonFilesInto(id, 'gaji_mingguan');
+  }
+
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:600px">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:${col.bg}"><i class="ti ${col.icon}" style="font-size:16px;color:${col.fg}"></i></div>
+        <div><h2>Gaji Mingguan ${fmtD(g.tanggalSabtu).split(',')[0]}</h2><p>${g.id}</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="section">
+          <div class="info-grid">
+            <span class="k">Total Upah</span><span class="v" style="font-weight:700">${fmt(g.totalUpah)}</span>
+            <span class="k">Total Potongan</span><span class="v">${fmt(g.totalPotongan)}</span>
+            ${g.makerId?`<span class="k">Nomor Maker</span><span class="v">${esc(g.makerId)}</span>`:''}
+          </div>
+        </div>
+        <div class="section">
+          <label>Detail Pekerja (${items.length})</label>
+          <div class="ktable-wrap">
+            <table class="ktable">
+              <thead><tr><th>Nama</th><th>Upah</th><th>Potongan</th></tr></thead>
+              <tbody>${items.map(it=>`<tr><td>${esc(it.nama)}</td><td>${fmt(it.nominalUpah)}</td><td>${fmt(it.potonganKasbon)}</td></tr>`).join('')}</tbody>
+            </table>
+          </div>
+        </div>
+        <div class="section"><label>Riwayat</label>${renderHistory(g.history)}</div>
+      </div>
+      ${actionHTML}
+    </div>
+  </div>`;
+}
+
+async function updateGmingAndClose(id, patch, histMsg) {
+  await updateGajiMingguanRemote(id, patch, histMsg);
+  closeModal();
+}
+async function updateGajiMingguanRemote(id, patch, histMsg) {
+  showLoader('Menyimpan...');
+  try {
+    const res = await apiPost({action:'updateGajiMingguan', id, patch, histMsg});
+    if (res.ok) {
+      const idx = gajiMingguanList.findIndex(g=>g.id===id);
+      if (idx!==-1) gajiMingguanList[idx] = {...gajiMingguanList[idx], ...patch};
+      renderKasbonBody();
+    } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
+  } catch(e) { showToast('Error koneksi','ti-alert-triangle'); }
+  hideLoader();
+}
+async function doMakerGming(id) {
+  const mkr = 'MKR-G-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000)+1000);
+  await updateGajiMingguanRemote(id, {status:'maker', makerId:mkr}, 'Maker '+mkr+' dibuat dan diapprove');
+  closeModal();
+}
+async function doReleaseGming(id) {
+  const bt = 'BTG-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000)+1000);
+  await updateGajiMingguanRemote(id, {status:'bukti', buktNo:bt}, 'Batch gaji dieksekusi BOD, bukti '+bt+' diterbitkan');
+  closeModal();
+}
+
+// ════════════════════════════════════════════════════════════
+//  D. KANBAN GAJI BULANAN (Penjahit Bulanan + Finishing) — 5 kolom
+// ════════════════════════════════════════════════════════════
+function renderGajiBulananBoardHTML() {
+  const canAdd = canKasbonInput();
+  return `
+    ${canAdd ? `<div style="margin-bottom:12px"><button class="btn btn-primary" style="min-height:36px;padding:7px 14px" onclick="openAddGajiBulananModal()"><i class="ti ti-plus" style="font-size:14px"></i> Input Gaji Bulanan</button></div>` : ''}
+    <div class="kboard-wrap">
+      ${GAJI_COLS.map(col => {
+        const cards = gajiBulananList.filter(g => g.status === col.id);
+        return `
+        <div class="kcol">
+          <div class="kcol-hdr">
+            <div class="ico" style="background:${col.bg}"><i class="ti ${col.icon}" style="font-size:12px;color:${col.fg}"></i></div>
+            <span class="label">${col.label}</span>
+            <span class="cnt" style="background:${col.bg};color:${col.fg}">${cards.length}</span>
+          </div>
+          <div class="kcards">
+            ${cards.length===0?`<div style="text-align:center;padding:16px 8px;font-size:11px;color:var(--txt3)">Tidak ada</div>`:
+            cards.map(g => `
+              <div class="kcard" id="gbl-card-${g.id}">
+                <div class="kcard-id">${g.id}</div>
+                <div class="kcard-title">Gaji ${esc(g.bulan)}</div>
+                <div class="kcard-sub">${(g.items||[]).length} pekerja bulanan</div>
+                <div class="kcard-amount">${fmt(g.totalGaji)}</div>
+              </div>`).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function openAddGajiBulananModal() {
+  const bulanan = pekerjaList.filter(p => isKategoriBulanan(p.kategori) && p.aktif !== false);
+  window._gbulanItems = [];
+  const defaultBulan = new Date().toISOString().slice(0,7);
+
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:680px">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:rgba(56,139,253,.15)"><i class="ti ti-calendar-month" style="font-size:16px;color:#79c0ff"></i></div>
+        <div><h2>Input Gaji Bulanan</h2><p>Batch gaji untuk pekerja bulanan & finishing</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="section"><label>Bulan</label><input type="month" class="fld" id="gbl-bulan" value="${defaultBulan}"></div>
+        <div class="section">
+          <label>Tambah Pekerja Bulanan</label>
+          <div style="display:flex;gap:6px">
+            <select class="fld" id="gbl-add-pekerja" style="flex:1">
+              <option value="">— Pilih Pekerja —</option>
+              ${bulanan.map(p=>`<option value="${p.id}">${esc(p.nama)} (${esc(kategoriLabel(p.kategori))})</option>`).join('')}
+            </select>
+            <button class="btn btn-primary" style="min-height:38px;padding:0 14px" onclick="addGbulanItem()"><i class="ti ti-plus" style="font-size:14px"></i></button>
+          </div>
+        </div>
+        <div class="section">
+          <div class="batch-row header" style="grid-template-columns:1fr 90px 90px 90px 90px 28px">
+            <span>Nama</span><span>Gaji Fix</span><span>Lembur</span><span>Potongan</span><span>Diterima</span><span></span>
+          </div>
+          <div id="gbl-items-list"></div>
+        </div>
+        <div class="batch-summary" id="gbl-summary"></div>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-primary" onclick="submitAddGajiBulanan()"><i class="ti ti-send" style="font-size:14px"></i> Ajukan Batch Gaji</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>`;
+  renderGbulanItemsList();
+}
+
+function addGbulanItem() {
+  const sel = document.getElementById('gbl-add-pekerja');
+  const pekerjaId = sel.value;
+  if (!pekerjaId) return;
+  if (window._gbulanItems.find(it=>it.pekerjaId===pekerjaId)) { showToast('Pekerja sudah ada di list','ti-alert-triangle'); return; }
+  const p = pekerjaList.find(x=>x.id===pekerjaId);
+  const gajiFix = p.gajiFix || 0;
+  const saldoKasbon = p.saldoKasbon || 0;
+  // Auto-suggest potongan kasbon = sisa saldo kasbon (bisa diedit nanti)
+  window._gbulanItems.push({
+    pekerjaId, nama: p.nama, gajiFix, lembur: 0,
+    potonganKasbon: saldoKasbon, saldoKasbon,
+    gajiDiterima: gajiFix - saldoKasbon
+  });
+  sel.value = '';
+  renderGbulanItemsList();
+}
+
+function removeGbulanItem(idx) {
+  window._gbulanItems.splice(idx,1);
+  renderGbulanItemsList();
+}
+
+function updateGbulanItem(idx, field, val) {
+  window._gbulanItems[idx][field] = Number(String(val||'').replace(/\D/g,'')) || 0;
+  const it = window._gbulanItems[idx];
+  it.gajiDiterima = (it.gajiFix||0) + (it.lembur||0) - (it.potonganKasbon||0);
+  renderGbulanItemsList();
+}
+
+function renderGbulanItemsList() {
+  const container = document.getElementById('gbl-items-list');
+  if (!container) return;
+  container.innerHTML = window._gbulanItems.map((it,i) => `
+    <div class="batch-row" style="grid-template-columns:1fr 90px 90px 90px 90px 28px">
+      <span style="font-size:12px">${esc(it.nama)}<br><span style="font-size:9.5px;color:var(--txt3)">Sisa kasbon: ${fmt(it.saldoKasbon||0)}</span></span>
+      <span style="font-size:11.5px;color:var(--txt2);font-family:'JetBrains Mono',monospace">${fmt(it.gajiFix)}</span>
+      <input type="text" class="fld" placeholder="0" value="${it.lembur||''}" oninput="updateGbulanItem(${i},'lembur',this.value);formatNominalInput(this)">
+      <input type="text" class="fld" placeholder="0" value="${it.potonganKasbon||''}" oninput="updateGbulanItem(${i},'potonganKasbon',this.value);formatNominalInput(this)">
+      <span style="font-size:11.5px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--green)">${fmt(it.gajiDiterima)}</span>
+      <button onclick="removeGbulanItem(${i})" style="background:none;border:none;color:var(--red);cursor:pointer"><i class="ti ti-trash" style="font-size:13px"></i></button>
+    </div>`).join('') || `<div style="text-align:center;padding:12px;color:var(--txt3);font-size:12px">Belum ada pekerja ditambahkan.</div>`;
+  renderGbulanSummary();
+}
+
+function renderGbulanSummary() {
+  const el = document.getElementById('gbl-summary');
+  if (!el) return;
+  const totalGaji = window._gbulanItems.reduce((s,it)=>s+(it.gajiDiterima||0),0);
+  const totalLembur = window._gbulanItems.reduce((s,it)=>s+(it.lembur||0),0);
+  const totalPotongan = window._gbulanItems.reduce((s,it)=>s+(it.potonganKasbon||0),0);
+  el.innerHTML = `
+    <div class="tax-row"><span>Jumlah Pekerja</span><span>${window._gbulanItems.length}</span></div>
+    <div class="tax-row"><span>Total Lembur</span><span>${fmt(totalLembur)}</span></div>
+    <div class="tax-row"><span>Total Potongan Kasbon</span><span>${fmt(totalPotongan)}</span></div>
+    <div class="tax-row total"><span>Total Gaji Diterima</span><span>${fmt(totalGaji)}</span></div>
+  `;
+}
+
+async function submitAddGajiBulanan() {
+  const bulan = document.getElementById('gbl-bulan')?.value;
+  if (!bulan) { showToast('Pilih bulan','ti-alert-triangle'); return; }
+  if (window._gbulanItems.length===0) { showToast('Tambahkan minimal 1 pekerja','ti-alert-triangle'); return; }
+
+  showLoader('Menyimpan batch gaji bulanan...');
+  try {
+    const res = await apiPost({action:'addGajiBulanan', data:{ bulan, items: window._gbulanItems }});
+    if (res.ok) {
+      showToast('Batch gaji '+res.id+' berhasil diajukan','ti-calendar-month');
+      closeModal();
+      await loadKasbonAll();
+    } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
+  } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
+  hideLoader();
+}
+
+function openGajiBulananDetailModal(id) {
+  const g = gajiBulananList.find(x=>x.id===id);
+  if (!g) return;
+  const col = GAJI_COLS.find(c=>c.id===g.status);
+  const items = g.items || [];
+
+  let actionHTML = '';
+  if (g.status === 'pengajuan' && canKasbonFinance()) {
+    actionHTML = `<div class="action-area"><button class="btn btn-success" onclick="updateGbulanAndClose('${id}',{status:'verifikasi'},'Batch gaji diverifikasi Finance')"><i class="ti ti-circle-check" style="font-size:14px"></i> Verifikasi</button></div>`;
+  } else if (g.status === 'verifikasi' && canKasbonFinance()) {
+    actionHTML = `<div class="action-area"><button class="btn btn-success" onclick="doMakerGbulan('${id}')"><i class="ti ti-user-check" style="font-size:14px"></i> Buat & Approve Maker</button></div>`;
+  } else if (g.status === 'maker' && canKasbonFinance()) {
+    actionHTML = `<div class="action-area"><button class="btn btn-primary" onclick="updateGbulanAndClose('${id}',{status:'releaser'},'Batch gaji dikirim ke Releaser BOD')"><i class="ti ti-send" style="font-size:14px"></i> Kirim ke Releaser BOD</button></div>`;
+  } else if (g.status === 'releaser' && canKasbonReleaser()) {
+    actionHTML = `<div class="action-area"><button class="btn btn-teal" onclick="doReleaseGbulan('${id}')"><i class="ti ti-player-play" style="font-size:14px"></i> Tandai Sudah Dieksekusi</button></div>`;
+  } else if (g.status === 'bukti') {
+    actionHTML = `<div class="action-area">
+      <div style="padding:10px 12px;background:var(--green-bg);border-radius:var(--radius);border:1px solid rgba(63,185,80,.3);margin-bottom:8px">
+        <i class="ti ti-circle-check" style="font-size:15px;color:var(--green)"></i>
+        <span style="font-size:13px;font-weight:600;color:var(--green);margin-left:6px">${esc(g.buktNo||'Selesai')}</span>
+      </div>
+      <div id="kasbon-files-${id}" style="font-size:12px;color:var(--txt3)">Memuat lampiran...</div>
+      ${canKasbonFinance() ? `
+      <div style="margin-top:8px">
+        <label class="slbl">Upload Bukti Transfer</label>
+        <div class="upload-zone" onclick="document.getElementById('fi-gblfile').click()">
+          <div class="uz-ico"><i class="ti ti-cloud-upload"></i></div>
+          <p>Klik untuk upload bukti (bisa multi-file)</p>
+          <input type="file" id="fi-gblfile" accept=".pdf,.jpg,.jpeg,.png" multiple onchange="uploadKasbonFileMulti('${id}','gaji_bulanan',this)">
+        </div>
+      </div>` : ''}
+    </div>`;
+    loadKasbonFilesInto(id, 'gaji_bulanan');
+  }
+
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:600px">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:${col.bg}"><i class="ti ${col.icon}" style="font-size:16px;color:${col.fg}"></i></div>
+        <div><h2>Gaji Bulanan ${esc(g.bulan)}</h2><p>${g.id}</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="section">
+          <div class="info-grid">
+            <span class="k">Total Gaji Diterima</span><span class="v" style="font-weight:700">${fmt(g.totalGaji)}</span>
+            <span class="k">Total Lembur</span><span class="v">${fmt(g.totalLembur)}</span>
+            <span class="k">Total Potongan Kasbon</span><span class="v">${fmt(g.totalPotongan)}</span>
+            ${g.makerId?`<span class="k">Nomor Maker</span><span class="v">${esc(g.makerId)}</span>`:''}
+          </div>
+        </div>
+        <div class="section">
+          <label>Detail Pekerja (${items.length})</label>
+          <div class="ktable-wrap">
+            <table class="ktable">
+              <thead><tr><th>Nama</th><th>Gaji Fix</th><th>Lembur</th><th>Potongan</th><th>Diterima</th></tr></thead>
+              <tbody>${items.map(it=>`<tr><td>${esc(it.nama)}</td><td>${fmt(it.gajiFix)}</td><td>${fmt(it.lembur)}</td><td>${fmt(it.potonganKasbon)}</td><td style="font-weight:600">${fmt(it.gajiDiterima)}</td></tr>`).join('')}</tbody>
+            </table>
+          </div>
+        </div>
+        <div class="section"><label>Riwayat</label>${renderHistory(g.history)}</div>
+      </div>
+      ${actionHTML}
+    </div>
+  </div>`;
+}
+
+async function updateGbulanAndClose(id, patch, histMsg) {
+  await updateGajiBulananRemote(id, patch, histMsg);
+  closeModal();
+}
+async function updateGajiBulananRemote(id, patch, histMsg) {
+  showLoader('Menyimpan...');
+  try {
+    const res = await apiPost({action:'updateGajiBulanan', id, patch, histMsg});
+    if (res.ok) {
+      const idx = gajiBulananList.findIndex(g=>g.id===id);
+      if (idx!==-1) gajiBulananList[idx] = {...gajiBulananList[idx], ...patch};
+      renderKasbonBody();
+    } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
+  } catch(e) { showToast('Error koneksi','ti-alert-triangle'); }
+  hideLoader();
+}
+async function doMakerGbulan(id) {
+  const mkr = 'MKR-GB-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000)+1000);
+  await updateGajiBulananRemote(id, {status:'maker', makerId:mkr}, 'Maker '+mkr+' dibuat dan diapprove');
+  closeModal();
+}
+async function doReleaseGbulan(id) {
+  const bt = 'BTGB-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000)+1000);
+  await updateGajiBulananRemote(id, {status:'bukti', buktNo:bt}, 'Batch gaji bulanan dieksekusi BOD, bukti '+bt+' diterbitkan');
+  closeModal();
+}
+
+// ════════════════════════════════════════════════════════════
+//  FILE UPLOAD KASBON (shared: kasbon, gaji_mingguan, gaji_bulanan)
+// ════════════════════════════════════════════════════════════
+async function loadKasbonFilesInto(refId, refType) {
+  const container = document.getElementById('kasbon-files-'+refId);
+  if (!container) return;
+  try {
+    const res = await apiGet({action:'getKasbonFiles', refId});
+    const files = res.ok ? res.data : [];
+    if (files.length===0) { container.innerHTML = '<span style="color:var(--txt3)">Belum ada file bukti.</span>'; return; }
+    container.innerHTML = files.map(f=>`
+      <div class="file-item">
+        <i class="ti ti-receipt" style="font-size:13px;color:var(--green)"></i>
+        <span class="fi-name">${esc(f.fileName)}</span>
+        <a href="${f.driveUrl}" target="_blank"><i class="ti ti-external-link" style="font-size:12px"></i> Buka</a>
+      </div>`).join('');
+  } catch(e) {
+    container.innerHTML = '<span style="color:var(--red)">Gagal memuat file.</span>';
+  }
+}
+
+function uploadKasbonFileToDrive(refId, refType, file, category) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = async e => {
+      const base64 = e.target.result.split(',')[1];
+      try {
+        const res = await apiPost({
+          action:'uploadKasbonFile', refId, refType, category,
+          fileName:file.name, mimeType:file.type||'application/octet-stream',
+          base64, uploadedBy:currentUser.name
+        });
+        resolve(res);
+      } catch(err) { resolve({ok:false}); }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadKasbonFileNow(refId, refType, input) {
+  const file = input.files[0];
+  if (!file) return;
+  showLoader('Mengupload bukti...');
+  await uploadKasbonFileToDrive(refId, refType, file, 'bukti_kasbon');
+  showToast('Bukti berhasil diupload','ti-receipt');
+  hideLoader();
+  loadKasbonFilesInto(refId, refType);
+}
+
+async function uploadKasbonFileMulti(refId, refType, input) {
+  const files = Array.from(input.files);
+  if (files.length===0) return;
+  showLoader('Mengupload '+files.length+' file...');
+  for (const f of files) await uploadKasbonFileToDrive(refId, refType, f, 'bukti_gaji');
+  showToast('Bukti berhasil diupload','ti-receipt');
+  hideLoader();
+  loadKasbonFilesInto(refId, refType);
+}
+
+// ─── Init Kasbon DB (modal konfirmasi) ────────────────────────
+function confirmInitKasbonDB() {
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:var(--orange-bg)"><i class="ti ti-database" style="font-size:16px;color:var(--orange)"></i></div>
+        <div><h2>Inisialisasi Database Kasbon</h2><p>Setup sheet Kasbon & Upah otomatis</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px;color:var(--txt2);line-height:1.7">Akan membuat sheet <strong style="color:var(--txt)">Pekerja</strong>, <strong style="color:var(--txt)">RiwayatKasbon</strong>, <strong style="color:var(--txt)">Kasbon</strong>, <strong style="color:var(--txt)">GajiMingguan</strong>, <strong style="color:var(--txt)">GajiBulanan</strong>, dan <strong style="color:var(--txt)">KasbonFiles</strong>. Aman dijalankan meski sheet sudah ada.</p>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-warn" onclick="runInitKasbonDB()"><i class="ti ti-database" style="font-size:14px"></i> Jalankan Inisialisasi</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>`;
+}
+async function runInitKasbonDB() {
+  closeModal(); showLoader('Menginisialisasi database kasbon...');
+  try {
+    const res = await apiPost({action:'initKasbonDB'});
+    if (res.ok) { showToast('Database Kasbon berhasil diinisialisasi','ti-database'); await loadKasbonAll(); }
+    else showToast('Gagal: '+res.error,'ti-alert-triangle');
+  } catch(e) { showToast('Error koneksi','ti-alert-triangle'); }
+  hideLoader();
 }
 
 function closeModal() {
