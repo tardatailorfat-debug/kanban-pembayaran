@@ -2279,16 +2279,35 @@ async function submitAddKasbon() {
 }
 
 async function updateKasbonStatus(id, patch, histMsg) {
-  showLoader('Menyimpan...');
+  // OPTIMISTIC UPDATE: ubah state lokal & UI dulu, baru kirim ke server.
+  // User tidak perlu menunggu Apps Script untuk melihat perubahan.
+  const idx = kasbonList.findIndex(k=>k.id===id);
+  const backup = idx!==-1 ? {...kasbonList[idx]} : null;
+  if (idx!==-1) {
+    kasbonList[idx] = {...kasbonList[idx], ...patch};
+    if (histMsg) {
+      const hist = Array.isArray(kasbonList[idx].history) ? [...kasbonList[idx].history] : [];
+      hist.push({msg:histMsg, ts:new Date().toISOString(), col:patch.status||kasbonList[idx].status, label:''});
+      kasbonList[idx].history = hist;
+    }
+  }
+  renderKasbonBody();
+  closeModal();
+
+  // Sinkronisasi ke server di background
   try {
     const res = await apiPost({action:'updateKasbon', id, patch, histMsg});
-    if (res.ok) {
-      const idx = kasbonList.findIndex(k=>k.id===id);
-      if (idx!==-1) kasbonList[idx] = {...kasbonList[idx], ...patch};
+    if (!res.ok) {
+      // Rollback kalau gagal
+      if (idx!==-1 && backup) kasbonList[idx] = backup;
       renderKasbonBody();
-    } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
-  } catch(e) { showToast('Error koneksi','ti-alert-triangle'); }
-  hideLoader();
+      showToast('Gagal menyimpan ke server: '+(res.error||'?'),'ti-alert-triangle');
+    }
+  } catch(e) {
+    if (idx!==-1 && backup) kasbonList[idx] = backup;
+    renderKasbonBody();
+    showToast('Gagal konek ke server, perubahan dibatalkan','ti-alert-triangle');
+  }
 }
 
 function openKasbonDetailModal(id) {
@@ -2355,13 +2374,11 @@ function openKasbonDetailModal(id) {
 
 async function updateKasbonAndClose(id, patch, histMsg) {
   await updateKasbonStatus(id, patch, histMsg);
-  closeModal();
 }
 
 async function doReleaseKasbon(id) {
   const bt = 'BTK-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000)+1000);
   await updateKasbonStatus(id, {status:'bukti', buktNo:bt}, 'Kasbon dieksekusi BOD, bukti '+bt+' diterbitkan');
-  closeModal();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -2569,29 +2586,42 @@ function openGajiMingguanDetailModal(id) {
 
 async function updateGmingAndClose(id, patch, histMsg) {
   await updateGajiMingguanRemote(id, patch, histMsg);
-  closeModal();
 }
 async function updateGajiMingguanRemote(id, patch, histMsg) {
-  showLoader('Menyimpan...');
+  // OPTIMISTIC UPDATE
+  const idx = gajiMingguanList.findIndex(g=>g.id===id);
+  const backup = idx!==-1 ? {...gajiMingguanList[idx]} : null;
+  if (idx!==-1) {
+    gajiMingguanList[idx] = {...gajiMingguanList[idx], ...patch};
+    if (histMsg) {
+      const hist = Array.isArray(gajiMingguanList[idx].history) ? [...gajiMingguanList[idx].history] : [];
+      hist.push({msg:histMsg, ts:new Date().toISOString(), col:patch.status||gajiMingguanList[idx].status, label:''});
+      gajiMingguanList[idx].history = hist;
+    }
+  }
+  renderKasbonBody();
+  closeModal();
+
   try {
     const res = await apiPost({action:'updateGajiMingguan', id, patch, histMsg});
-    if (res.ok) {
-      const idx = gajiMingguanList.findIndex(g=>g.id===id);
-      if (idx!==-1) gajiMingguanList[idx] = {...gajiMingguanList[idx], ...patch};
+    if (!res.ok) {
+      if (idx!==-1 && backup) gajiMingguanList[idx] = backup;
       renderKasbonBody();
-    } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
-  } catch(e) { showToast('Error koneksi','ti-alert-triangle'); }
-  hideLoader();
+      showToast('Gagal menyimpan: '+(res.error||'?'),'ti-alert-triangle');
+    }
+  } catch(e) {
+    if (idx!==-1 && backup) gajiMingguanList[idx] = backup;
+    renderKasbonBody();
+    showToast('Gagal konek ke server, perubahan dibatalkan','ti-alert-triangle');
+  }
 }
 async function doMakerGming(id) {
   const mkr = 'MKR-G-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000)+1000);
   await updateGajiMingguanRemote(id, {status:'maker', makerId:mkr}, 'Maker '+mkr+' dibuat dan diapprove');
-  closeModal();
 }
 async function doReleaseGming(id) {
   const bt = 'BTG-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000)+1000);
   await updateGajiMingguanRemote(id, {status:'bukti', buktNo:bt}, 'Batch gaji dieksekusi BOD, bukti '+bt+' diterbitkan');
-  closeModal();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -2815,29 +2845,42 @@ function openGajiBulananDetailModal(id) {
 
 async function updateGbulanAndClose(id, patch, histMsg) {
   await updateGajiBulananRemote(id, patch, histMsg);
-  closeModal();
 }
 async function updateGajiBulananRemote(id, patch, histMsg) {
-  showLoader('Menyimpan...');
+  // OPTIMISTIC UPDATE
+  const idx = gajiBulananList.findIndex(g=>g.id===id);
+  const backup = idx!==-1 ? {...gajiBulananList[idx]} : null;
+  if (idx!==-1) {
+    gajiBulananList[idx] = {...gajiBulananList[idx], ...patch};
+    if (histMsg) {
+      const hist = Array.isArray(gajiBulananList[idx].history) ? [...gajiBulananList[idx].history] : [];
+      hist.push({msg:histMsg, ts:new Date().toISOString(), col:patch.status||gajiBulananList[idx].status, label:''});
+      gajiBulananList[idx].history = hist;
+    }
+  }
+  renderKasbonBody();
+  closeModal();
+
   try {
     const res = await apiPost({action:'updateGajiBulanan', id, patch, histMsg});
-    if (res.ok) {
-      const idx = gajiBulananList.findIndex(g=>g.id===id);
-      if (idx!==-1) gajiBulananList[idx] = {...gajiBulananList[idx], ...patch};
+    if (!res.ok) {
+      if (idx!==-1 && backup) gajiBulananList[idx] = backup;
       renderKasbonBody();
-    } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
-  } catch(e) { showToast('Error koneksi','ti-alert-triangle'); }
-  hideLoader();
+      showToast('Gagal menyimpan: '+(res.error||'?'),'ti-alert-triangle');
+    }
+  } catch(e) {
+    if (idx!==-1 && backup) gajiBulananList[idx] = backup;
+    renderKasbonBody();
+    showToast('Gagal konek ke server, perubahan dibatalkan','ti-alert-triangle');
+  }
 }
 async function doMakerGbulan(id) {
   const mkr = 'MKR-GB-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000)+1000);
   await updateGajiBulananRemote(id, {status:'maker', makerId:mkr}, 'Maker '+mkr+' dibuat dan diapprove');
-  closeModal();
 }
 async function doReleaseGbulan(id) {
   const bt = 'BTGB-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000)+1000);
   await updateGajiBulananRemote(id, {status:'bukti', buktNo:bt}, 'Batch gaji bulanan dieksekusi BOD, bukti '+bt+' diterbitkan');
-  closeModal();
 }
 
 // ════════════════════════════════════════════════════════════
