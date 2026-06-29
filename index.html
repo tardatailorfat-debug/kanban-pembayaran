@@ -2722,11 +2722,22 @@ function removeGbulanItem(idx) {
   renderGbulanItemsList();
 }
 
-function updateGbulanItem(idx, field, val) {
+function updateGbulanItem(idx, field, val, inputEl) {
+  // FIX: jangan render ulang seluruh list saat sedang mengetik (oninput),
+  // karena innerHTML re-render menghancurkan elemen <input> yang sedang
+  // difokus -> kursor & fokus hilang, user harus klik ulang tiap 1 digit.
+  // Cukup update data + nilai "Diterima" di baris yang sama, lalu refresh summary saja.
   window._gbulanItems[idx][field] = Number(String(val||'').replace(/\D/g,'')) || 0;
   const it = window._gbulanItems[idx];
   it.gajiDiterima = (it.gajiFix||0) + (it.lembur||0) - (it.potonganKasbon||0);
-  renderGbulanItemsList();
+
+  // Update tampilan "Diterima" di baris yang sama tanpa re-render seluruh list
+  const row = inputEl ? inputEl.closest('.batch-row') : null;
+  if (row) {
+    const diterimaEl = row.querySelector('.gbl-diterima-val');
+    if (diterimaEl) diterimaEl.textContent = fmt(it.gajiDiterima);
+  }
+  renderGbulanSummary();
 }
 
 function renderGbulanItemsList() {
@@ -2736,9 +2747,9 @@ function renderGbulanItemsList() {
     <div class="batch-row" style="grid-template-columns:1fr 90px 90px 90px 90px 28px">
       <span style="font-size:12px">${esc(it.nama)}<br><span style="font-size:9.5px;color:var(--txt3)">Sisa kasbon: ${fmt(it.saldoKasbon||0)}</span></span>
       <span style="font-size:11.5px;color:var(--txt2);font-family:'JetBrains Mono',monospace">${fmt(it.gajiFix)}</span>
-      <input type="text" class="fld" placeholder="0" value="${it.lembur||''}" oninput="updateGbulanItem(${i},'lembur',this.value);formatNominalInput(this)">
-      <input type="text" class="fld" placeholder="0" value="${it.potonganKasbon||''}" oninput="updateGbulanItem(${i},'potonganKasbon',this.value);formatNominalInput(this)">
-      <span style="font-size:11.5px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--green)">${fmt(it.gajiDiterima)}</span>
+      <input type="text" class="fld" placeholder="0" value="${it.lembur||''}" oninput="updateGbulanItem(${i},'lembur',this.value,this);formatNominalInput(this)">
+      <input type="text" class="fld" placeholder="0" value="${it.potonganKasbon||''}" oninput="updateGbulanItem(${i},'potonganKasbon',this.value,this);formatNominalInput(this)">
+      <span class="gbl-diterima-val" style="font-size:11.5px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--green)">${fmt(it.gajiDiterima)}</span>
       <button onclick="removeGbulanItem(${i})" style="background:none;border:none;color:var(--red);cursor:pointer"><i class="ti ti-trash" style="font-size:13px"></i></button>
     </div>`).join('') || `<div style="text-align:center;padding:12px;color:var(--txt3);font-size:12px">Belum ada pekerja ditambahkan.</div>`;
   renderGbulanSummary();
