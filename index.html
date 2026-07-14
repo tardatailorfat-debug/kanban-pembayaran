@@ -846,17 +846,29 @@ function enterApp(user) {
   document.getElementById('app').style.display = 'flex';
   document.getElementById('topbar-role').textContent = ROLE_LABELS[user.role];
   document.getElementById('topbar-name').textContent = user.name;
-  // reset button visibility first
-  ['btn-report','btn-arsip','btn-initdb','btn-dashboard'].forEach(id => {
-    document.getElementById(id).style.display = 'none';
+  // reset button visibility first (gunakan ?. agar aman jika elemen tidak ada)
+  ['btn-arsip','btn-initdb','btn-dashboard'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
   });
+  // reset topbar nav
+  const topbarNav = document.getElementById('topbar-nav');
+  const topbarNavDiv = document.getElementById('topbar-nav-div');
+  if (topbarNav) topbarNav.style.display = 'none';
+  if (topbarNavDiv) topbarNavDiv.style.display = 'none';
+
   if (can('report') || isOwner()) {
-    document.getElementById('btn-arsip').style.display = 'flex';
-    document.getElementById('btn-dashboard').style.display = 'flex';
-    document.getElementById('topbar-nav').style.display = 'flex';
-    document.getElementById('topbar-nav-div').style.display = 'block';
+    const elArsip = document.getElementById('btn-arsip');
+    const elDash  = document.getElementById('btn-dashboard');
+    if (elArsip) elArsip.style.display = 'flex';
+    if (elDash)  elDash.style.display = 'flex';
+    if (topbarNav) topbarNav.style.display = 'flex';
+    if (topbarNavDiv) topbarNavDiv.style.display = 'block';
   }
-  if (isOwner()) document.getElementById('btn-initdb').style.display = 'flex';
+  if (isOwner()) {
+    const elInit = document.getElementById('btn-initdb');
+    if (elInit) elInit.style.display = 'flex';
+  }
   // User avatar initial
   const avatarEl = document.getElementById('user-avatar');
   if (avatarEl) avatarEl.textContent = (user.name||'U').charAt(0).toUpperCase();
@@ -2062,11 +2074,15 @@ function switchMenu(menu) {
   document.getElementById('menu-content-kasbon').style.display = menu==='kasbon' ? 'flex' : 'none';
 
   document.getElementById('app-title').textContent = menu==='pembayaran'
-    ? 'Kanban Transaksi Pembayaran' : 'Kasbon & Upah Pekerja';
+    ? 'TARDA Finance Hub' : 'Kasbon & Upah Pekerja';
 
   closeSidebar();
 
-  if (menu === 'kasbon') {
+  if (menu === 'pembayaran') {
+    // Re-render board setelah container visible
+    renderBoard();
+    renderStats();
+  } else if (menu === 'kasbon') {
     if (isOwner()) document.getElementById('btn-init-kasbon-db').style.display = 'flex';
     else document.getElementById('btn-init-kasbon-db').style.display = 'none';
     loadKasbonAll();
