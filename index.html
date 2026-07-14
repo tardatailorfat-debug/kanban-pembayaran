@@ -577,7 +577,7 @@ select.fld option{background:var(--bg2)}
     </div>
   </div>
 
-  <div style="display:flex;flex:1;overflow:hidden;position:relative">
+  <div style="display:flex;flex:1;overflow:hidden;position:relative;min-height:0">
     <!-- SIDEBAR OVERLAY (mobile & desktop, slide dari kiri) -->
     <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
     <div class="sidebar" id="sidebar">
@@ -594,9 +594,9 @@ select.fld option{background:var(--bg2)}
       </button>
     </div>
 
-    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;min-width:0">
       <!-- ═══ KONTEN: PEMBAYARAN ═══ -->
-      <div id="menu-content-pembayaran" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+      <div id="menu-content-pembayaran" style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0">
         <div class="search-bar" id="search-bar">
           <div class="search-input-wrap">
             <i class="ti ti-search" style="font-size:14px;color:var(--txt3)"></i>
@@ -661,7 +661,7 @@ select.fld option{background:var(--bg2)}
 const API = 'https://script.google.com/macros/s/AKfycbxb0bUxkWGda81Y9Aq0L9oxjmX9nMr-x90Gxrf9eU40FBEZSaTnoQ9XuwcdPtqxz0ZbTA/exec';
 
 const PASSWORDS = {
-  owner:             'useradmin123',
+  owner:             'useradmin',
   finance:           'superman999',
   releaser:          'bosziyad123',
   divisi_produksi:   'hahahihi',
@@ -959,7 +959,8 @@ function hideLoader() { document.getElementById('loader').style.display='none'; 
 // ─── Load All ────────────────────────────────────────────────
 async function loadAll() {
   showLoader('Memuat data transaksi...');
-  renderBoard(); renderStats();
+  // Render board awal (kosong) setelah browser selesai layout
+  requestAnimationFrame(() => { renderBoard(); renderStats(); });
   try {
     const res = await apiGet({action:'getTrxs'});
     if (res.ok) trxs = res.data || [];
