@@ -514,30 +514,35 @@ select.fld option{background:var(--bg2)}
     <div class="login-card">
       <h1>TARDA Finance Hub</h1>
       <p>Sistem Transaksi Keuangan</p>
-      <div class="login-field">
-        <label class="login-label" for="ls-role">Role</label>
-        <select class="login-select" id="ls-role">
-          <option value="">— Pilih Role —</option>
-          <option value="owner">Owner</option>
-          <option value="finance">Finance</option>
-          <option value="releaser">Releaser BOD</option>
-          <option value="divisi_produksi">Divisi Produksi</option>
-          <option value="sales">Sales</option>
-          <option value="divisi_marketing">Divisi Marketing</option>
-          <option value="umum">Umum</option>
-          <option value="kepala_produksi">Kepala Produksi</option>
-        </select>
-      </div>
-      <div class="login-field">
-        <label class="login-label" for="ls-name">Nama Pengguna</label>
-        <input type="text" class="login-input" id="ls-name" placeholder="Masukkan nama Anda">
-      </div>
-      <div class="login-field">
-        <label class="login-label" for="ls-pass">Password</label>
-        <input type="password" class="login-input" id="ls-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
-      </div>
-      <div class="login-err" id="ls-err"></div>
-      <button class="login-btn" onclick="doLogin()">Masuk</button>
+      <form onsubmit="event.preventDefault();doLogin()" autocomplete="on">
+        <div class="login-field">
+          <label class="login-label" for="ls-role">Role</label>
+          <select class="login-select" id="ls-role" name="role" autocomplete="off">
+            <option value="">— Pilih Role —</option>
+            <option value="owner">Owner</option>
+            <option value="finance">Finance</option>
+            <option value="releaser">Releaser BOD</option>
+            <option value="divisi_produksi">Divisi Produksi</option>
+            <option value="sales">Sales</option>
+            <option value="divisi_marketing">Divisi Marketing</option>
+            <option value="umum">Umum</option>
+            <option value="kepala_produksi">Kepala Produksi</option>
+          </select>
+        </div>
+        <div class="login-field">
+          <label class="login-label" for="ls-name">Nama Pengguna</label>
+          <input type="text" class="login-input" id="ls-name" placeholder="Masukkan nama Anda"
+            autocomplete="username" name="username">
+        </div>
+        <div class="login-field">
+          <label class="login-label" for="ls-pass">Password</label>
+          <input type="password" class="login-input" id="ls-pass" placeholder="••••••••"
+            autocomplete="current-password" name="password"
+            onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <div class="login-err" id="ls-err"></div>
+        <button type="submit" class="login-btn">Masuk</button>
+      </form>
     </div>
   </div>
 </div>
@@ -661,7 +666,7 @@ select.fld option{background:var(--bg2)}
 const API = 'https://script.google.com/macros/s/AKfycbxb0bUxkWGda81Y9Aq0L9oxjmX9nMr-x90Gxrf9eU40FBEZSaTnoQ9XuwcdPtqxz0ZbTA/exec';
 
 const PASSWORDS = {
-  owner:             'useradmin',
+  owner:             'useradmin123',
   finance:           'superman999',
   releaser:          'bosziyad123',
   divisi_produksi:   'hahahihi',
@@ -1080,7 +1085,35 @@ const PRIORITY_STYLES = {
 let trxPriority = {};
 
 function getPriority(id) { return trxPriority[id] || 'Rendah'; }
-function setPriority(id, val) { trxPriority[id] = val; renderBoard(); renderStats(); }
+
+function setPriority(id, val) {
+  trxPriority[id] = val;
+  // Update badge di card (jika card ada di board)
+  const cardEl = document.getElementById('card-'+id);
+  if (cardEl) {
+    const ps = PRIORITY_STYLES[val];
+    const badge = cardEl.querySelector('.card-priority');
+    const dot   = cardEl.querySelector('.card-priority-dot');
+    if (badge) { badge.style.background=ps.bg; badge.style.color=ps.fg; badge.lastChild.textContent=val; }
+    if (dot)   dot.style.background = ps.dot;
+  }
+  // Update tombol priority di dalam modal tanpa tutup modal
+  const PRIOS = ['Rendah','Sedang','Tinggi'];
+  PRIOS.forEach(p => {
+    const btn = document.getElementById('prio-btn-'+id+'-'+p);
+    if (!btn) return;
+    const ps = PRIORITY_STYLES[p];
+    const active = val === p;
+    btn.style.borderColor = active ? ps.dot : 'var(--bdr)';
+    btn.style.background  = active ? ps.bg  : 'var(--bg3)';
+    btn.style.color       = active ? ps.fg  : 'var(--txt2)';
+  });
+  // Update info urgent kalau ada
+  const urgentInfo = document.getElementById('urgent-info-'+id);
+  if (urgentInfo) {
+    urgentInfo.style.display = val === 'Tinggi' ? 'block' : 'none';
+  }
+}
 
 function renderCardHTML(t, col) {
   const hasRevisi = t.catatanRevisi && t.status === 'pengajuan';
@@ -1583,7 +1616,7 @@ function buildActionHTML(t) {
           ${PRIOS.map(p => {
             const ps = PRIORITY_STYLES[p];
             const active = curPrio === p;
-            return `<button onclick="setPriority('${t.id}','${p}')"
+            return `<button id="prio-btn-${t.id}-${p}" onclick="setPriority('${t.id}','${p}')"
               style="flex:1;padding:7px 4px;border-radius:8px;border:2px solid ${active?ps.dot:'var(--bdr)'};
               background:${active?ps.bg:'var(--bg3)'};color:${active?ps.fg:'var(--txt2)'};
               font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;
@@ -1592,8 +1625,8 @@ function buildActionHTML(t) {
             </button>`;
           }).join('')}
         </div>
-        ${curPrio === 'Tinggi' ? `<div style="margin-top:8px;padding:8px 10px;background:var(--gold-bg);border-radius:8px;border:1px solid var(--gold);font-size:12px;color:var(--gold-fg);font-weight:600">
-          ⚡ <strong>Urgent:</strong> Transaksi akan langsung ke Maker (lewati Verifikasi Pajak). Pajak bisa dihitung di Bukti Transaksi.</div>` : ''}
+        <div id="urgent-info-${t.id}" style="display:${curPrio==='Tinggi'?'block':'none'};margin-top:8px;padding:8px 10px;background:var(--gold-bg);border-radius:8px;border:1px solid var(--gold);font-size:12px;color:var(--gold-fg);font-weight:600">
+          ⚡ <strong>Urgent:</strong> Transaksi akan langsung ke Maker (lewati Verifikasi Pajak). Pajak bisa dihitung di Bukti Transaksi.</div>
       </div>
       <button class="btn btn-success" onclick="doVerifikasiBerkas('${t.id}')">
         <i class="ti ti-circle-check" style="font-size:14px"></i> Berkas Lengkap
