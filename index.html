@@ -106,10 +106,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--txt);min-height:10
 }
 .tb-btn:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.22);color:#fff}
 /* Override tb-btn inside content area (not topbar) */
-.search-bar .tb-btn, .menu-tabs .tb-btn{
-  background:var(--bg2);border:1.5px solid var(--bdr);color:var(--txt2);
+.search-bar .tb-btn, .menu-tabs .tb-btn, .modal .tb-btn, .modal-body .tb-btn, .action-area .tb-btn{
+  background:var(--bg3);border:1.5px solid var(--bdr);color:var(--txt2);
 }
-.search-bar .tb-btn:hover, .menu-tabs .tb-btn:hover{border-color:var(--bdr2);color:var(--txt);background:var(--bg3)}
+.search-bar .tb-btn:hover, .menu-tabs .tb-btn:hover, .modal .tb-btn:hover{border-color:var(--bdr2);color:var(--txt);background:var(--bg4)}
 /* Dark mode toggle btn */
 #btn-theme{font-size:15px;padding:5px 9px}
 
@@ -2199,7 +2199,10 @@ function renderMasterPekerjaHTML() {
         <div class="stat-chip"><i class="ti ti-users" style="font-size:13px;color:var(--blue)"></i><span>Total Pekerja</span><strong>${pekerjaList.length}</strong></div>
         <div class="stat-chip"><i class="ti ti-cash-banknote" style="font-size:13px;color:var(--orange)"></i><span>Total Saldo Kasbon</span><strong>${fmt(totalSaldo)}</strong></div>
       </div>
-      ${canEdit ? `<button class="btn btn-primary" style="min-height:36px;padding:7px 14px" onclick="openAddPekerjaModal()"><i class="ti ti-plus" style="font-size:14px"></i> Tambah Pekerja</button>` : ''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost" style="font-size:12px;padding:7px 12px" onclick="exportPekerjaCSV()"><i class="ti ti-file-spreadsheet" style="font-size:13px"></i> Export CSV</button>
+        ${canEdit ? `<button class="btn btn-primary" style="min-height:36px;padding:7px 14px" onclick="openAddPekerjaModal()"><i class="ti ti-plus" style="font-size:14px"></i> Tambah Pekerja</button>` : ''}
+      </div>
     </div>
     <div class="ktable-wrap">
       <table class="ktable">
@@ -2222,17 +2225,64 @@ function renderMasterPekerjaHTML() {
   `;
 }
 
+// ─── Helper render form rekening ─────────────────────────────
+function renderRekeningForm(items) {
+  // items = [{noRekening, namaBank, namaTujuan}]
+  const list = items && items.length > 0 ? items : [{noRekening:'',namaBank:'',namaTujuan:''}];
+  return list.map((r,i) => `
+    <div class="rekening-row" id="rek-row-${i}" style="border:1.5px solid var(--bdr);border-radius:10px;padding:10px 12px;margin-bottom:8px;position:relative">
+      <div style="font-size:10.5px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">
+        Rekening ${i+1} ${i===0?'':'<button onclick="removeRekeningRow('+i+')" style="background:none;border:none;color:var(--red);cursor:pointer;float:right;padding:0"><i class="ti ti-trash" style="font-size:12px"></i></button>'}
+      </div>
+      <div class="row2" style="gap:8px;margin-bottom:6px">
+        <input type="text" class="fld rek-no" data-idx="${i}" placeholder="No. Rekening" value="${esc(r.noRekening||'')}">
+        <input type="text" class="fld rek-bank" data-idx="${i}" placeholder="Bank (BCA, Mandiri...)" value="${esc(r.namaBank||'')}">
+      </div>
+      <input type="text" class="fld rek-tujuan" data-idx="${i}" placeholder="Nama pemilik rekening" value="${esc(r.namaTujuan||'')}">
+    </div>`).join('');
+}
+
+function addRekeningRow() {
+  const wrap = document.getElementById('rekening-wrap');
+  if (!wrap) return;
+  const count = wrap.querySelectorAll('.rekening-row').length;
+  if (count >= 3) { showToast('Maksimal 3 rekening per pekerja','ti-alert-triangle'); return; }
+  const div = document.createElement('div');
+  div.innerHTML = renderRekeningForm([...getFormRekening(), {noRekening:'',namaBank:'',namaTujuan:''}]);
+  wrap.innerHTML = div.innerHTML;
+}
+
+function removeRekeningRow(idx) {
+  const list = getFormRekening();
+  list.splice(idx, 1);
+  const wrap = document.getElementById('rekening-wrap');
+  if (wrap) { const div = document.createElement('div'); div.innerHTML = renderRekeningForm(list); wrap.innerHTML = div.innerHTML; }
+}
+
+function getFormRekening() {
+  const rows = document.querySelectorAll('.rekening-row');
+  const result = [];
+  rows.forEach((row) => {
+    result.push({
+      noRekening: row.querySelector('.rek-no')?.value.trim() || '',
+      namaBank:   row.querySelector('.rek-bank')?.value.trim() || '',
+      namaTujuan: row.querySelector('.rek-tujuan')?.value.trim() || '',
+    });
+  });
+  return result;
+}
+
 function openAddPekerjaModal() {
   document.getElementById('modal-area').innerHTML = `
   <div class="overlay" onclick="if(event.target===this)closeModal()">
     <div class="modal">
       <div class="modal-hdr">
-        <div class="m-icon" style="background:rgba(56,139,253,.15)"><i class="ti ti-user-plus" style="font-size:16px;color:#79c0ff"></i></div>
+        <div class="m-icon" style="background:rgba(56,139,253,.15)"><i class="ti ti-user-plus" style="font-size:16px;color:var(--blue)"></i></div>
         <div><h2>Tambah Pekerja Baru</h2><p>Data master pekerja</p></div>
         <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
       </div>
       <div class="modal-body">
-        <div class="section"><label>Nama</label><input type="text" class="fld" id="pk-nama" placeholder="Nama lengkap pekerja"></div>
+        <div class="section"><label>Nama <span style="color:var(--red)">*</span></label><input type="text" class="fld" id="pk-nama" placeholder="Nama lengkap pekerja"></div>
         <div class="row2 section">
           <div><label>NIK</label><input type="text" class="fld" id="pk-nik" placeholder="Nomor KTP"></div>
           <div>
@@ -2242,11 +2292,13 @@ function openAddPekerjaModal() {
             </select>
           </div>
         </div>
-        <div class="row2 section">
-          <div><label>No. Rekening</label><input type="text" class="fld" id="pk-rek" placeholder="Nomor rekening"></div>
-          <div><label>Nama Bank</label><input type="text" class="fld" id="pk-bank" placeholder="Contoh: BCA, Mandiri..."></div>
+        <div class="section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <label style="margin-bottom:0">Rekening Tujuan <span style="color:var(--red)">*</span></label>
+            <button class="tb-btn" onclick="addRekeningRow()" style="font-size:11px;padding:3px 8px"><i class="ti ti-plus" style="font-size:11px"></i> Tambah</button>
+          </div>
+          <div id="rekening-wrap">${renderRekeningForm([])}</div>
         </div>
-        <div class="section"><label>Nama Tujuan Rekening</label><input type="text" class="fld" id="pk-tujuan" placeholder="Nama pemilik rekening"></div>
         <div class="section" id="pk-gajifix-wrap" style="display:none">
           <label>Gaji Fix Bulanan (Rp)</label>
           <input type="text" class="fld" id="pk-gajifix" placeholder="Contoh: 3.000.000" inputmode="numeric" oninput="formatNominalInput(this)">
@@ -2274,13 +2326,17 @@ async function submitAddPekerja() {
   const kategori = document.getElementById('pk-kategori')?.value;
   if (!nama || !kategori) { showToast('Nama dan kategori wajib diisi','ti-alert-triangle'); return; }
 
+  const rekeningArr = getFormRekening().filter(r => r.noRekening);
+  if (rekeningArr.length === 0) { showToast('Minimal 1 rekening wajib diisi','ti-alert-triangle'); return; }
+
+  const first = rekeningArr[0];
   const data = {
-    nama,
-    nik: document.getElementById('pk-nik')?.value.trim() || '',
+    nama, nik: document.getElementById('pk-nik')?.value.trim() || '',
     kategori,
-    noRekening: document.getElementById('pk-rek')?.value.trim() || '',
-    namaBank: document.getElementById('pk-bank')?.value.trim() || '',
-    namaTujuanRekening: document.getElementById('pk-tujuan')?.value.trim() || '',
+    noRekening: first.noRekening,
+    namaBank: first.namaBank,
+    namaTujuanRekening: first.namaTujuan,
+    rekening: rekeningArr,
     gajiFix: Number(String(document.getElementById('pk-gajifix')?.value||'').replace(/\D/g,'')) || 0,
     saldoKasbonAwal: Number(String(document.getElementById('pk-saldoawal')?.value||'').replace(/\D/g,'')) || 0,
   };
@@ -2316,10 +2372,23 @@ async function openPekerjaDetailModal(id) {
           <div class="info-grid">
             <span class="k">NIK</span><span class="v plain">${esc(p.nik||'-')}</span>
             <span class="k">Kategori</span><span class="v plain">${esc(kategoriLabel(p.kategori))}</span>
-            <span class="k">No. Rekening</span><span class="v">${esc(p.noRekening||'-')} (${esc(p.namaBank||'-')})</span>
-            <span class="k">Nama Tujuan</span><span class="v plain">${esc(p.namaTujuanRekening||'-')}</span>
             ${isKategoriBulanan(p.kategori) ? `<span class="k">Gaji Fix</span><span class="v">${fmt(p.gajiFix||0)}</span>` : ''}
             <span class="k">Saldo Kasbon</span><span class="v" style="color:var(--orange);font-weight:700">${fmt(p.saldoKasbon||0)}</span>
+          </div>
+          <!-- Multi rekening -->
+          <div style="margin-top:10px">
+            ${(() => {
+              const reks = p.rekening && p.rekening.length > 0
+                ? p.rekening
+                : (p.noRekening ? [{noRekening:p.noRekening,namaBank:p.namaBank,namaTujuan:p.namaTujuanRekening}] : []);
+              if (reks.length === 0) return `<div style="font-size:12px;color:var(--txt3)">Belum ada data rekening.</div>`;
+              return reks.map((r,i) => `
+                <div style="background:var(--bg3);border-radius:8px;padding:8px 10px;margin-bottom:6px;border:1px solid var(--bdr)">
+                  <div style="font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Rekening ${i+1}</div>
+                  <div style="font-size:12.5px;font-weight:600">${esc(r.noRekening||'-')} <span style="color:var(--txt3)">(${esc(r.namaBank||'-')})</span></div>
+                  <div style="font-size:12px;color:var(--txt2)">${esc(r.namaTujuan||'-')}</div>
+                </div>`).join('');
+            })()}
           </div>
         </div>
         <div class="section">
@@ -2427,11 +2496,13 @@ function openEditPekerjaModal(id) {
             </select>
           </div>
         </div>
-        <div class="row2 section">
-          <div><label>No. Rekening</label><input type="text" class="fld" id="pk-rek" value="${esc(p.noRekening||'')}"></div>
-          <div><label>Nama Bank</label><input type="text" class="fld" id="pk-bank" value="${esc(p.namaBank||'')}"></div>
+        <div class="section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <label style="margin-bottom:0">Rekening Tujuan</label>
+            <button class="tb-btn" onclick="addRekeningRow()" style="font-size:11px;padding:3px 8px"><i class="ti ti-plus" style="font-size:11px"></i> Tambah</button>
+          </div>
+          <div id="rekening-wrap">${renderRekeningForm(p.rekening && p.rekening.length > 0 ? p.rekening : [{noRekening:p.noRekening||'',namaBank:p.namaBank||'',namaTujuan:p.namaTujuanRekening||''}])}</div>
         </div>
-        <div class="section"><label>Nama Tujuan Rekening</label><input type="text" class="fld" id="pk-tujuan" value="${esc(p.namaTujuanRekening||'')}"></div>
         <div class="section" id="pk-gajifix-wrap" style="display:${isKategoriBulanan(p.kategori)?'block':'none'}">
           <label>Gaji Fix Bulanan (Rp)</label>
           <input type="text" class="fld" id="pk-gajifix" value="${p.gajiFix?Number(p.gajiFix).toLocaleString('id-ID'):''}" inputmode="numeric" oninput="formatNominalInput(this)">
@@ -2452,13 +2523,16 @@ function openEditPekerjaModal(id) {
 
 async function submitEditPekerja() {
   const id = document.getElementById('pk-editid')?.value;
+  const rekeningArr = getFormRekening().filter(r => r.noRekening);
+  const first = rekeningArr[0] || {};
   const data = {
     nama: document.getElementById('pk-nama')?.value.trim(),
     nik: document.getElementById('pk-nik')?.value.trim(),
     kategori: document.getElementById('pk-kategori')?.value,
-    noRekening: document.getElementById('pk-rek')?.value.trim(),
-    namaBank: document.getElementById('pk-bank')?.value.trim(),
-    namaTujuanRekening: document.getElementById('pk-tujuan')?.value.trim(),
+    noRekening: first.noRekening || '',
+    namaBank: first.namaBank || '',
+    namaTujuanRekening: first.namaTujuan || '',
+    rekening: rekeningArr,
     gajiFix: Number(String(document.getElementById('pk-gajifix')?.value||'').replace(/\D/g,'')) || 0,
     saldoKasbon: Number(String(document.getElementById('pk-saldokasbon')?.value||'').replace(/\D/g,'')) || 0,
   };
@@ -2522,17 +2596,21 @@ function openAddKasbonModal() {
   <div class="overlay" onclick="if(event.target===this)closeModal()">
     <div class="modal">
       <div class="modal-hdr">
-        <div class="m-icon" style="background:rgba(56,139,253,.15)"><i class="ti ti-cash-banknote" style="font-size:16px;color:#79c0ff"></i></div>
+        <div class="m-icon" style="background:rgba(56,139,253,.15)"><i class="ti ti-cash-banknote" style="font-size:16px;color:var(--blue)"></i></div>
         <div><h2>Ajukan Kasbon</h2><p>Pengajuan kasbon baru</p></div>
         <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
       </div>
       <div class="modal-body">
         <div class="section">
           <label>Nama Pekerja <span style="color:var(--red)">*</span></label>
-          <select class="fld" id="ksb-pekerja">
+          <select class="fld" id="ksb-pekerja" onchange="onKasbonPekerjaChange()">
             <option value="">— Pilih Pekerja —</option>
             ${pekerjaList.filter(p=>p.aktif!==false).map(p=>`<option value="${p.id}">${esc(p.nama)}</option>`).join('')}
           </select>
+        </div>
+        <div class="section" id="ksb-rekening-wrap" style="display:none">
+          <label>Rekening Tujuan <span style="color:var(--red)">*</span></label>
+          <select class="fld" id="ksb-rekening"></select>
         </div>
         <div class="section">
           <label>Nominal Kasbon (Rp) <span style="color:var(--red)">*</span></label>
@@ -2549,6 +2627,52 @@ function openAddKasbonModal() {
       </div>
     </div>
   </div>`;
+}
+
+function onKasbonPekerjaChange() {
+  const pekerjaId = document.getElementById('ksb-pekerja')?.value;
+  const wrap = document.getElementById('ksb-rekening-wrap');
+  const sel  = document.getElementById('ksb-rekening');
+  if (!pekerjaId || !wrap || !sel) return;
+
+  const p = pekerjaList.find(x=>x.id===pekerjaId);
+  const reks = p?.rekening && p.rekening.length > 0
+    ? p.rekening
+    : (p?.noRekening ? [{noRekening:p.noRekening, namaBank:p.namaBank, namaTujuan:p.namaTujuanRekening}] : []);
+
+  if (reks.length <= 1) {
+    wrap.style.display = 'none'; // hanya 1 rekening, tidak perlu pilih
+  } else {
+    wrap.style.display = 'block';
+    sel.innerHTML = reks.map((r,i) =>
+      `<option value="${i}">${esc(r.noRekening)} (${esc(r.namaBank)}) — ${esc(r.namaTujuan)}</option>`
+    ).join('');
+  }
+}
+
+// ─── Export CSV Master Pekerja ────────────────────────────────
+async function exportPekerjaCSV() {
+  showLoader('Menyiapkan data export...');
+  try {
+    const res = await apiGet({action:'exportPekerjaCSV'});
+    if (!res.ok || !res.csv) { showToast('Tidak ada data untuk diexport','ti-alert-triangle'); hideLoader(); return; }
+
+    // Download CSV
+    const blob = new Blob(['\uFEFF'+res.csv], {type:'text/csv;charset=utf-8;'}); // BOM untuk Excel
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const now  = new Date();
+    const tgl  = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+    a.href     = url;
+    a.download = 'Master_Pekerja_'+tgl+'.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast('Export berhasil — '+res.total+' pekerja','ti-file-spreadsheet');
+  } catch(e) { showToast('Gagal export: '+e,'ti-alert-triangle'); }
+  hideLoader();
 }
 
 async function submitAddKasbon() {
