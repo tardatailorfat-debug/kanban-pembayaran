@@ -3626,10 +3626,16 @@ async function runInitKasbonDB() {
   hideLoader();
 }
 
+function getMyPCDompet() {
+  const myIds = myPcIds(); // null = Finance/Owner lihat semua
+  if (!myIds) return pcDompetList;
+  return pcDompetList.filter(d => myIds.includes(d.id));
+}
+
 async function loadPCAll() {
   showLoader('Memuat data petty cash...');
   try {
-    const res = await apiGet({action:'getPCDompet'});
+    const res = await apiGet({action:'getPettyCash'});
     if (res.ok) pcDompetList = res.data || [];
     // Set dompet aktif pertama yang bisa diakses
     const myDompet = getMyPCDompet();
@@ -3644,7 +3650,7 @@ async function loadPCTrx(dompetId) {
   try {
     const id = dompetId || pcActiveDompetId;
     if (!id) return;
-    const res = await apiGet({action:'getPCTrx', dompetId:id});
+    const res = await apiGet({action:'getPettyCashTrx', pcId:id, dateFrom:pcDateFrom, dateTo:pcDateTo});
     if (res.ok) pcTrxList = res.data || [];
   } catch(e) {}
 }
@@ -3930,8 +3936,8 @@ async function submitPCTrx() {
       buktiUrl = await uploadPCBukti(pcActiveDompetId, fileInput.files[0]);
     }
 
-    const res = await apiPost({action:'addPCTrx', data:{
-      dompetId: pcActiveDompetId,
+    const res = await apiPost({action:'addPettyCashTrx', data:{
+      pcId: pcActiveDompetId,
       namaDompet: active?.nama||'',
       tanggal, jenis:'keluar',
       kodeAkun, namaAkun, keterangan,
@@ -3949,7 +3955,7 @@ async function submitPCTrx() {
 }
 
 // ─── Upload bukti ke Drive ────────────────────────────────────
-async function uploadPCBukti(dompetId, file) {
+async function uploadPCBukti(pcId, file) {
   return new Promise(resolve => {
     const reader = new FileReader();
     reader.onload = async e => {
@@ -4017,15 +4023,15 @@ async function submitPCTransfer() {
   showLoader('Memproses transfer...');
   try {
     // Kurangi PC003 (Bank)
-    await apiPost({action:'addPCTrx', data:{
-      dompetId:'PC003', namaDompet:'Petty Cash Produksi - Bank',
+    await apiPost({action:'addPettyCashTrx', data:{
+      pcId:'PC003', namaDompet:'Petty Cash Produksi - Bank',
       tanggal:new Date().toISOString().slice(0,10),
       jenis:'transfer_keluar', kodeAkun:'', namaAkun:'',
       keterangan:ket+' → Cash', nominal, inputBy:currentUser?.name||'',
     }});
     // Tambah PC004 (Cash)
-    await apiPost({action:'addPCTrx', data:{
-      dompetId:'PC004', namaDompet:'Petty Cash Produksi - Cash',
+    await apiPost({action:'addPettyCashTrx', data:{
+      pcId:'PC004', namaDompet:'Petty Cash Produksi - Cash',
       tanggal:new Date().toISOString().slice(0,10),
       jenis:'transfer_masuk', kodeAkun:'', namaAkun:'',
       keterangan:ket+' ← Bank', nominal, inputBy:currentUser?.name||'',
@@ -4113,7 +4119,7 @@ async function submitEditSaldo(dompetId) {
   const ket   = document.getElementById('pcs-ket')?.value.trim();
   showLoader('Menyimpan penyesuaian...');
   try {
-    const res = await apiPost({action:'editPCSaldo', dompetId, saldo, keterangan:ket});
+    const res = await apiPost({action:'editSaldoPC', pcId, saldoBaru:saldo, keterangan:ket});
     if (res.ok) {
       showToast('Saldo diperbarui','ti-check');
       closeModal();
@@ -4198,7 +4204,7 @@ async function submitEditPCTrx(id) {
   const keterangan = document.getElementById('pce-ket')?.value.trim();
   showLoader('Menyimpan...');
   try {
-    const res = await apiPost({action:'editPCTrx', id, data:{kodeAkun, namaAkun, keterangan, editedBy:currentUser?.name||'Finance'}});
+    const res = await apiPost({action:'editPCTrxCoA', trxId:id, kodeCoA:kodeAkun, namaCoA:namaAkun});
     if (res.ok) {
       showToast('Transaksi diupdate','ti-check');
       closeModal();
@@ -4225,7 +4231,7 @@ async function exportPCTrxCSV() {
   const d = pcDompetList.find(x=>x.id===pcActiveDompetId);
   showLoader('Menyiapkan export...');
   try {
-    const res = await apiGet({action:'exportPCTrx', dompetId:pcActiveDompetId});
+    const res = await apiGet({action:'exportPettyCashTrx', pcId:pcActiveDompetId});
     if (!res.ok||!res.csv) { showToast('Tidak ada data','ti-alert-triangle'); hideLoader(); return; }
 
     const blob = new Blob(['\uFEFF'+res.csv], {type:'text/csv;charset=utf-8;'});
@@ -4265,7 +4271,7 @@ function confirmInitPCDB() {
 async function runInitPCDB() {
   closeModal(); showLoader('Inisialisasi database petty cash...');
   try {
-    const res = await apiPost({action:'initPCDB'});
+    const res = await apiPost({action:'initPettyCashDB'});
     if (res.ok) { showToast('Database Petty Cash berhasil diinisialisasi','ti-database'); await loadPCAll(); }
     else showToast('Gagal: '+res.error,'ti-alert-triangle');
   } catch(e) { showToast('Error koneksi','ti-alert-triangle'); }
