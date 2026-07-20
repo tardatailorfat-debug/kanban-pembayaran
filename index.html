@@ -2627,6 +2627,7 @@ function openAddKasbonModal() {
       </div>
     </div>
   </div>`;
+  // Tidak ada pekerja yang pre-selected, dropdown rekening belum perlu ditampilkan
 }
 
 function onKasbonPekerjaChange() {
@@ -2640,8 +2641,7 @@ function onKasbonPekerjaChange() {
   const p = pekerjaList.find(x => x.id === pekerjaId);
   if (!p) { wrap.style.display = 'none'; return; }
 
-  // Kumpulkan semua rekening: prioritaskan array rekening baru,
-  // fallback ke kolom legacy noRekening jika array kosong/tidak ada
+  // Kumpulkan semua rekening: array baru ATAU fallback ke kolom legacy
   let reks = [];
   if (Array.isArray(p.rekening) && p.rekening.length > 0) {
     reks = p.rekening;
@@ -2653,19 +2653,19 @@ function onKasbonPekerjaChange() {
     }];
   }
 
-  if (reks.length <= 1) {
-    // Hanya 1 rekening — sembunyikan dropdown tapi tetap simpan data di hidden
+  // Selalu tampilkan dropdown rekening — baik 1 maupun lebih
+  // supaya user tahu rekening tujuannya dan bisa konfirmasi
+  if (reks.length === 0) {
     wrap.style.display = 'none';
-    sel.innerHTML = reks.map((r,i) =>
-      `<option value="${i}" data-rek='${JSON.stringify(r)}'>${esc(r.noRekening)} (${esc(r.namaBank)})</option>`
-    ).join('');
-  } else {
-    // >1 rekening — tampilkan dropdown
-    wrap.style.display = 'block';
-    sel.innerHTML = reks.map((r,i) =>
-      `<option value="${i}" data-rek='${JSON.stringify(r)}'>${esc(r.noRekening)} (${esc(r.namaBank)}) — ${esc(r.namaTujuan)}</option>`
-    ).join('');
+    return;
   }
+
+  wrap.style.display = 'block';
+  sel.innerHTML = reks.map((r, i) =>
+    `<option value="${i}" data-rek='${JSON.stringify(r).replace(/'/g,"&#39;")}'>
+      ${esc(r.noRekening)} — ${esc(r.namaBank)} (${esc(r.namaTujuan)})
+    </option>`
+  ).join('');
 }
 
 // Helper: ambil rekening yang dipilih di form kasbon
