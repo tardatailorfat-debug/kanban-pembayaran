@@ -344,6 +344,26 @@ select.fld option{background:var(--bg2)}
 .prog-bar-wrap{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden}
 .prog-bar{height:100%;border-radius:3px;transition:width .5s ease}
 
+/* PETTY CASH */
+.pc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:20px}
+.pc-card{background:var(--bg2);border:1.5px solid var(--bdr);border-radius:14px;padding:16px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.pc-card:hover{border-color:var(--blue);box-shadow:0 4px 16px rgba(47,111,237,.1)}
+.pc-card.active{border-color:var(--blue);background:var(--blue-bg)}
+.pc-card-nama{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:4px}
+.pc-card-jenis{font-size:11px;color:var(--txt3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px}
+.pc-saldo{font-size:22px;font-weight:800;color:var(--txt);font-family:var(--mono);letter-spacing:-.02em}
+.pc-saldo.low{color:var(--red)}
+.pc-saldo.warn{color:var(--orange)}
+.pc-mutasi-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.pc-mutasi-table th{text-align:left;padding:9px 12px;background:var(--bg3);color:var(--txt2);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1.5px solid var(--bdr)}
+.pc-mutasi-table td{padding:9px 12px;border-bottom:1px solid var(--bdr);color:var(--txt);vertical-align:middle}
+.pc-mutasi-table tr:hover td{background:var(--bg3)}
+.pc-mutasi-table .debit{color:var(--red);font-weight:600;font-family:var(--mono)}
+.pc-mutasi-table .kredit{color:var(--green);font-weight:600;font-family:var(--mono)}
+.pc-mutasi-table .saldo-cell{font-family:var(--mono);font-weight:600}
+.coa-badge{font-size:10.5px;padding:2px 7px;border-radius:5px;background:var(--blue-bg);color:var(--blue);font-weight:700;display:inline-block;font-family:var(--mono)}
+.pc-warn-badge{background:var(--orange-bg);color:var(--orange);font-size:10px;padding:2px 7px;border-radius:5px;font-weight:700}
+
 /* KASBON: watermark logo TARDA samar di background */
 .kasbon-body-watermark::before{
   content:'';
@@ -527,6 +547,7 @@ select.fld option{background:var(--bg2)}
             <option value="divisi_marketing">Divisi Marketing</option>
             <option value="umum">Umum</option>
             <option value="kepala_produksi">Kepala Produksi</option>
+        <option value="rumah_tangga_produksi">Rumah Tangga Produksi</option>
           </select>
         </div>
         <div class="login-field">
@@ -597,6 +618,9 @@ select.fld option{background:var(--bg2)}
       <button class="sidebar-item" id="tab-kasbon" onclick="switchMenu('kasbon')">
         <i class="ti ti-cash-banknote" style="font-size:14px"></i> Kasbon &amp; Upah
       </button>
+      <button class="sidebar-item" id="tab-pettycash" onclick="switchMenu('pettycash')" style="display:none">
+        <i class="ti ti-wallet" style="font-size:14px"></i> Petty Cash
+      </button>
     </div>
 
     <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;min-width:0">
@@ -643,6 +667,28 @@ select.fld option{background:var(--bg2)}
         </div>
         <div id="kasbon-body" class="kasbon-body-watermark" style="flex:1;overflow-y:auto;padding:14px;position:relative"></div>
       </div>
+
+      <!-- ═══ KONTEN: PETTY CASH ═══ -->
+      <div id="menu-content-pettycash" style="display:none;flex:1;flex-direction:column;overflow:hidden">
+        <div id="pc-body" style="flex:1;overflow-y:auto;padding:16px 20px"></div>
+      </div>
+    </div>
+
+      <!-- ═══ KONTEN: PETTY CASH ═══ -->
+      <div id="menu-content-pettycash" style="display:none;flex:1;flex-direction:column;overflow:hidden">
+        <div class="menu-tabs" id="pettycash-sub-tabs">
+          <button class="menu-tab active" onclick="switchPCTab('ringkasan')" id="pcsub-ringkasan">
+            <i class="ti ti-layout-dashboard" style="font-size:13px"></i> Ringkasan
+          </button>
+          <button class="menu-tab" onclick="switchPCTab('log')" id="pcsub-log">
+            <i class="ti ti-list" style="font-size:13px"></i> Log Transaksi
+          </button>
+          <button class="tb-btn" id="btn-init-pc-db" onclick="confirmInitPCDB()" style="display:none;margin-left:auto;border-color:var(--orange);color:var(--orange);flex-shrink:0">
+            <i class="ti ti-database" style="font-size:13px"></i> Init DB
+          </button>
+        </div>
+        <div id="pettycash-body" style="flex:1;overflow-y:auto;padding:16px 20px"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -674,6 +720,7 @@ const PASSWORDS = {
   divisi_marketing:  'marketing1473',
   umum:              'tardaumum123',
   kepala_produksi:   'hanyapakoen999',
+  rumah_tangga_produksi: 'madrid123',
 };
 
 const ROLE_LABELS = {
@@ -685,6 +732,7 @@ const ROLE_LABELS = {
   divisi_marketing: 'Divisi Marketing',
   umum:             'Umum',
   kepala_produksi:  'Kepala Produksi',
+  rumah_tangga_produksi: 'Rumah Tangga Produksi',
 };
 
 // Role yang boleh akses menu Kasbon & Upah
@@ -745,12 +793,97 @@ const GAJI_COLS = [
 ];
 
 // ─── State Kasbon ──────────────────────────────────────────────
-let currentMenu = 'pembayaran'; // 'pembayaran' | 'kasbon'
+let currentMenu = 'pembayaran'; // 'pembayaran' | 'kasbon' | 'pettycash'
 let pekerjaList = [];
 let kasbonList = [];
 let gajiMingguanList = [];
 let gajiBulananList = [];
 let kasbonSubTab = 'master'; // 'master' | 'kasbon' | 'gaji_mingguan' | 'gaji_bulanan'
+
+// ─── Petty Cash: konstanta & state ───────────────────────────
+const COA_LIST = [
+  {kode:"6-60000",nama:"Biaya Penjualan"},
+  {kode:"6-60001",nama:"Iklan & Promosi"},
+  {kode:"6-60002",nama:"Komisi & Fee"},
+  {kode:"6-60003",nama:"Transport, Bensin, Tol, Parkir - Produksi"},
+  {kode:"6-60004",nama:"Perjalanan Dinas - Produksi"},
+  {kode:"6-60005",nama:"Komunikasi - Produksi"},
+  {kode:"6-60006",nama:"Biaya Sewa Bangunan - Produksi Marketing"},
+  {kode:"6-60007",nama:"Biaya Sewa Alat - Produksi Marketing"},
+  {kode:"6-60008",nama:"Konsumsi - Produksi"},
+  {kode:"6-60009",nama:"Property - Produksi"},
+  {kode:"6-60010",nama:"Supplies dan Material Produksi"},
+  {kode:"6-60011",nama:"Beban Kardus"},
+  {kode:"6-60012",nama:"Marketing Lainnya"},
+  {kode:"6-60013",nama:"Beban Packaging"},
+  {kode:"6-60100",nama:"Biaya Umum & Administratif"},
+  {kode:"6-60101",nama:"Gaji"},
+  {kode:"6-60102",nama:"Upah"},
+  {kode:"6-60103",nama:"Makanan & Transportasi"},
+  {kode:"6-60104",nama:"Lembur"},
+  {kode:"6-60105",nama:"Pengobatan"},
+  {kode:"6-60106",nama:"THR & Bonus"},
+  {kode:"6-60107",nama:"BPJS TK"},
+  {kode:"6-60108",nama:"BPJS Kesehatan"},
+  {kode:"6-60109",nama:"Pesangon"},
+  {kode:"6-60110",nama:"Manfaat dan Tunjangan Lain"},
+  {kode:"6-60200",nama:"Donasi / Sumbangan"},
+  {kode:"6-60201",nama:"Hiburan"},
+  {kode:"6-60202",nama:"Bensin, Tol dan Parkir - Umum"},
+  {kode:"6-60203",nama:"Perbaikan & Pemeliharaan"},
+  {kode:"6-60204",nama:"Perjalanan Dinas - Umum"},
+  {kode:"6-60205",nama:"Makanan"},
+  {kode:"6-60206",nama:"Komunikasi - Umum"},
+  {kode:"6-60207",nama:"Iuran & Langganan"},
+  {kode:"6-60208",nama:"Asuransi"},
+  {kode:"6-60209",nama:"Legal & Profesional"},
+  {kode:"6-60210",nama:"Beban Manfaat Karyawan"},
+  {kode:"6-60211",nama:"Sarana Kantor"},
+  {kode:"6-60212",nama:"Pelatihan & Pengembangan"},
+  {kode:"6-60213",nama:"Beban Piutang Tak Tertagih"},
+  {kode:"6-60214",nama:"Pajak dan Perizinan"},
+  {kode:"6-60215",nama:"Denda"},
+  {kode:"6-60217",nama:"Listrik"},
+  {kode:"6-60218",nama:"Air"},
+  {kode:"6-60219",nama:"Beban Pajak"},
+  {kode:"6-60220",nama:"Langganan Software"},
+  {kode:"6-60221",nama:"Administrasi"},
+  {kode:"6-60300",nama:"Beban Kantor"},
+  {kode:"6-60301",nama:"Alat Tulis Kantor & Printing"},
+  {kode:"6-60302",nama:"Bea Materai"},
+  {kode:"6-60303",nama:"Keamanan dan Kebersihan"},
+  {kode:"6-60304",nama:"Supplies dan Material"},
+  {kode:"6-60305",nama:"Pemborong"},
+  {kode:"6-60306",nama:"Ongkir"},
+  {kode:"8-80999",nama:"Beban Lain - lain"},
+];
+
+// Pemegang petty cash: role → pcId mereka
+const PC_PEMEGANG = {
+  'sales':                  ['PC001'],
+  'divisi_marketing':       ['PC002'],
+  'rumah_tangga_produksi':  ['PC003','PC004'],
+};
+
+const PC_ROLES = ['owner','finance','sales','divisi_marketing','rumah_tangga_produksi'];
+function canAccessPC() { return PC_ROLES.includes(currentUser?.role) || isOwner(); }
+function isRumahTangga() { return currentUser?.role === 'rumah_tangga_produksi'; }
+function isPemegangPC() {
+  const r = currentUser?.role;
+  return r === 'sales' || r === 'divisi_marketing' || r === 'rumah_tangga_produksi';
+}
+function myPcIds() {
+  return PC_PEMEGANG[currentUser?.role] || null; // null = Finance/Owner lihat semua
+}
+
+// State petty cash
+let pcDompetList = [];  // master dompet
+let pcTrxList = [];     // transaksi aktif (filtered by dompet)
+let pcActiveId = null;  // dompet yang sedang dilihat
+let pcActiveDompetId = null;
+let pcSubTab = 'ringkasan'; // 'ringkasan' | 'log'
+let pcDateFrom = '';
+let pcDateTo   = '';
 
 let currentUser = null;
 let trxs = [];
@@ -878,21 +1011,39 @@ function enterApp(user) {
   const avatarEl = document.getElementById('user-avatar');
   if (avatarEl) avatarEl.textContent = (user.name||'U').charAt(0).toUpperCase();
 
-  // Sidebar (Pembayaran/Kasbon) hanya muncul kalau role bisa akses Kasbon
+  // Sidebar: tampilkan menu yang bisa diakses role ini
   const sidebarBtn = document.getElementById('btn-sidebar-toggle');
-  if (canAccessKasbon()) {
+  const tabPC = document.getElementById('tab-pettycash');
+  const tabKasbon = document.getElementById('tab-kasbon');
+  const tabPembayaran = document.getElementById('tab-pembayaran');
+
+  // Tampilkan menu Petty Cash di sidebar untuk yang punya akses
+  if (canAccessPC() && tabPC) tabPC.style.display = 'flex';
+  else if (tabPC) tabPC.style.display = 'none';
+
+  // Tampilkan menu Kasbon di sidebar untuk yang punya akses
+  if (canAccessKasbon() && tabKasbon) tabKasbon.style.display = 'flex';
+  else if (tabKasbon) tabKasbon.style.display = 'none';
+
+  const needsSidebar = canAccessKasbon() || canAccessPC();
+  if (needsSidebar) {
     sidebarBtn.style.display = 'flex';
-    if (isKepalaProduksi()) {
-      // Kepala Produksi tidak punya akses Kanban Pembayaran, langsung ke Kasbon
-      document.getElementById('tab-pembayaran').style.display = 'none';
-      switchMenu('kasbon');
-    } else {
-      document.getElementById('tab-pembayaran').style.display = 'flex';
-      switchMenu('pembayaran');
-    }
   } else {
     sidebarBtn.style.display = 'none';
-    closeSidebar();
+  }
+
+  // Route ke menu yang tepat berdasarkan role
+  if (isRumahTangga()) {
+    // Rumah Tangga Produksi: hanya akses Petty Cash
+    if (tabPembayaran) tabPembayaran.style.display = 'none';
+    if (tabKasbon) tabKasbon.style.display = 'none';
+    switchMenu('pettycash');
+  } else if (isKepalaProduksi()) {
+    // Kepala Produksi: hanya akses Kasbon
+    if (tabPembayaran) tabPembayaran.style.display = 'none';
+    switchMenu('kasbon');
+  } else {
+    if (tabPembayaran) tabPembayaran.style.display = 'flex';
     switchMenu('pembayaran');
   }
 
@@ -2102,24 +2253,27 @@ function closeSidebar() {
 // ════════════════════════════════════════════════════════════
 function switchMenu(menu) {
   currentMenu = menu;
-  document.getElementById('tab-pembayaran').classList.toggle('active', menu==='pembayaran');
-  document.getElementById('tab-kasbon').classList.toggle('active', menu==='kasbon');
-  document.getElementById('menu-content-pembayaran').style.display = menu==='pembayaran' ? 'flex' : 'none';
-  document.getElementById('menu-content-kasbon').style.display = menu==='kasbon' ? 'flex' : 'none';
+  ['pembayaran','kasbon','pettycash'].forEach(m => {
+    document.getElementById('tab-'+m)?.classList.toggle('active', m===menu);
+    const el = document.getElementById('menu-content-'+m);
+    if (el) el.style.display = m===menu ? 'flex' : 'none';
+  });
 
-  document.getElementById('app-title').textContent = menu==='pembayaran'
-    ? 'TARDA Finance Hub' : 'Kasbon & Upah Pekerja';
+  const titles = {pembayaran:'TARDA Finance Hub', kasbon:'Kasbon & Upah Pekerja', pettycash:'Petty Cash'};
+  document.getElementById('app-title').textContent = titles[menu] || 'TARDA Finance Hub';
 
   closeSidebar();
 
   if (menu === 'pembayaran') {
-    // Re-render board setelah container visible
-    renderBoard();
-    renderStats();
+    renderBoard(); renderStats();
   } else if (menu === 'kasbon') {
-    if (isOwner()) document.getElementById('btn-init-kasbon-db').style.display = 'flex';
-    else document.getElementById('btn-init-kasbon-db').style.display = 'none';
+    const el = document.getElementById('btn-init-kasbon-db');
+    if (el) el.style.display = isOwner() ? 'flex' : 'none';
     loadKasbonAll();
+  } else if (menu === 'pettycash') {
+    const el = document.getElementById('btn-init-pc-db');
+    if (el) el.style.display = isOwner() ? 'flex' : 'none';
+    loadPCAll();
   }
 }
 
@@ -3467,6 +3621,652 @@ async function runInitKasbonDB() {
   try {
     const res = await apiPost({action:'initKasbonDB'});
     if (res.ok) { showToast('Database Kasbon berhasil diinisialisasi','ti-database'); await loadKasbonAll(); }
+    else showToast('Gagal: '+res.error,'ti-alert-triangle');
+  } catch(e) { showToast('Error koneksi','ti-alert-triangle'); }
+  hideLoader();
+}
+
+async function loadPCAll() {
+  showLoader('Memuat data petty cash...');
+  try {
+    const res = await apiGet({action:'getPCDompet'});
+    if (res.ok) pcDompetList = res.data || [];
+    // Set dompet aktif pertama yang bisa diakses
+    const myDompet = getMyPCDompet();
+    if (!pcActiveDompetId && myDompet.length > 0) pcActiveDompetId = myDompet[0].id;
+  } catch(e) { showToast('Gagal memuat petty cash','ti-alert-triangle'); }
+  await loadPCTrx();
+  renderPCBody();
+  hideLoader();
+}
+
+async function loadPCTrx(dompetId) {
+  try {
+    const id = dompetId || pcActiveDompetId;
+    if (!id) return;
+    const res = await apiGet({action:'getPCTrx', dompetId:id});
+    if (res.ok) pcTrxList = res.data || [];
+  } catch(e) {}
+}
+
+function switchPCTab(tab) {
+  pcSubTab = tab;
+  ['ringkasan','log'].forEach(t => {
+    document.getElementById('pcsub-'+t)?.classList.toggle('active', t===tab);
+  });
+  renderPCBody();
+}
+
+function renderPCBody() {
+  const body = document.getElementById('pettycash-body');
+  if (!body) return;
+  if (pcSubTab === 'ringkasan') body.innerHTML = renderPCRingkasan();
+  else if (pcSubTab === 'log') body.innerHTML = renderPCLog();
+  attachPCHandlers();
+}
+
+function attachPCHandlers() {
+  // Tombol input pengeluaran
+  document.getElementById('btn-pc-input')?.addEventListener('click', openPCInputModal);
+  document.getElementById('btn-pc-transfer')?.addEventListener('click', openPCTransferModal);
+  document.getElementById('btn-pc-topup')?.addEventListener('click', () => doRequestTopUp(pcActiveDompetId));
+  document.getElementById('btn-pc-edit-saldo')?.addEventListener('click', () => openEditSaldoModal(pcActiveDompetId));
+  document.getElementById('btn-pc-export')?.addEventListener('click', exportPCTrxCSV);
+  // Pilih dompet
+  document.querySelectorAll('.pc-dompet-tab').forEach(el => {
+    el.addEventListener('click', () => {
+      pcActiveDompetId = el.dataset.id;
+      document.querySelectorAll('.pc-dompet-tab').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      loadPCTrx(pcActiveDompetId).then(() => renderPCBody());
+    });
+  });
+}
+
+// ─── Ringkasan ───────────────────────────────────────────────
+function renderPCRingkasan() {
+  const myDompet = getMyPCDompet();
+  if (myDompet.length === 0) return `<div style="text-align:center;padding:40px;color:var(--txt3)">Tidak ada petty cash yang bisa diakses.</div>`;
+
+  const active = myDompet.find(d=>d.id===pcActiveDompetId) || myDompet[0];
+  const canEdit = isOwner() || can('finance');
+
+  // Statistik periode ini (bulan berjalan)
+  const now = new Date();
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+  const trxBulanIni = pcTrxList.filter(t => t.dompetId===active.id && new Date(t.tanggal) >= firstDay);
+  const totalKeluar = trxBulanIni.reduce((s,t)=>s+(t.kredit||0),0);
+  const totalMasuk  = trxBulanIni.reduce((s,t)=>s+(t.debit||0),0);
+
+  // Breakdown COA bulan ini
+  const byAkun = {};
+  trxBulanIni.filter(t=>t.kredit>0).forEach(t => {
+    const key = t.kodeAkun || '-';
+    if (!byAkun[key]) byAkun[key] = {kode:t.kodeAkun, nama:t.namaAkun||PC_COA_MAP[t.kodeAkun]||'-', total:0};
+    byAkun[key].total += t.kredit;
+  });
+  const akunList = Object.values(byAkun).sort((a,b)=>b.total-a.total);
+  const maxAkun = akunList[0]?.total || 1;
+
+  const pctSaldo = active.topUpNominal > 0 ? Math.round((active.saldo/active.topUpNominal)*100) : 100;
+  const saldoColor = pctSaldo > 50 ? 'var(--green)' : pctSaldo > 20 ? 'var(--orange)' : 'var(--red)';
+
+  return `
+    <!-- Tabs dompet -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      ${myDompet.map(d=>`
+        <button class="pc-dompet-tab ${d.id===active.id?'active':''}" data-id="${d.id}"
+          style="padding:7px 14px;border-radius:10px;border:2px solid ${d.id===active.id?'var(--blue)':'var(--bdr)'};
+          background:${d.id===active.id?'var(--blue-bg)':'var(--bg2)'};color:${d.id===active.id?'var(--blue)':'var(--txt2)'};
+          font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer">
+          ${esc(d.nama.replace('Petty Cash ',''))}
+        </button>`).join('')}
+    </div>
+
+    <!-- Kartu saldo -->
+    <div style="background:var(--navy);border-radius:16px;padding:20px 24px;margin-bottom:16px;position:relative;overflow:hidden">
+      <div style="position:absolute;right:-20px;top:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">
+        ${esc(active.nama)}
+      </div>
+      <div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono);margin-bottom:12px">${fmt(active.saldo)}</div>
+      <div style="background:rgba(255,255,255,.15);border-radius:6px;height:6px;margin-bottom:8px">
+        <div style="background:${saldoColor};height:100%;border-radius:6px;width:${Math.min(pctSaldo,100)}%;transition:width .5s"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11.5px;color:rgba(255,255,255,.55)">
+        <span>Saldo tersisa</span>
+        ${active.topUpNominal>0?`<span>Kapasitas: ${fmt(active.topUpNominal)}</span>`:''}
+      </div>
+    </div>
+
+    <!-- Stat bulan ini -->
+    <div class="row2" style="gap:10px;margin-bottom:16px">
+      <div style="background:var(--bg2);border-radius:12px;padding:14px;border:1.5px solid var(--bdr)">
+        <div style="font-size:10.5px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Keluar Bulan Ini</div>
+        <div style="font-size:18px;font-weight:800;font-family:var(--mono);color:var(--txt)">${fmt(totalKeluar)}</div>
+      </div>
+      <div style="background:var(--bg2);border-radius:12px;padding:14px;border:1.5px solid var(--bdr)">
+        <div style="font-size:10.5px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Masuk Bulan Ini</div>
+        <div style="font-size:18px;font-weight:800;font-family:var(--mono);color:var(--txt)">${fmt(totalMasuk)}</div>
+      </div>
+    </div>
+
+    <!-- Tombol aksi -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+      <button class="btn btn-primary" id="btn-pc-input" style="flex:1;min-width:120px">
+        <i class="ti ti-minus" style="font-size:13px"></i> Input Pengeluaran
+      </button>
+      ${active.id==='PC003'?`<button class="btn btn-ghost" id="btn-pc-transfer" style="flex:1;min-width:120px">
+        <i class="ti ti-arrow-right" style="font-size:13px"></i> Transfer ke Cash
+      </button>`:''}
+      ${active.topUpNominal>0?`<button class="btn btn-warn" id="btn-pc-topup" style="flex:1;min-width:120px">
+        <i class="ti ti-arrow-up" style="font-size:13px"></i> Request Top-Up
+      </button>`:''}
+      ${canEdit?`<button class="btn btn-ghost" id="btn-pc-edit-saldo" style="padding:10px 12px">
+        <i class="ti ti-adjustments" style="font-size:13px"></i>
+      </button>`:''}
+    </div>
+
+    <!-- Breakdown COA -->
+    ${akunList.length>0?`
+    <div style="background:var(--bg2);border-radius:12px;padding:16px;border:1.5px solid var(--bdr);margin-bottom:16px">
+      <div style="font-size:11px;font-weight:800;color:var(--txt2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Pengeluaran per Akun — Bulan Ini</div>
+      ${akunList.slice(0,8).map(a=>`
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+            <span style="color:var(--txt);font-weight:600">${esc(a.kode)} <span style="color:var(--txt3);font-weight:400">${esc(a.nama)}</span></span>
+            <span style="font-family:var(--mono);font-size:11.5px;font-weight:700">${fmt(a.total)}</span>
+          </div>
+          <div style="background:var(--bg3);border-radius:4px;height:5px;overflow:hidden">
+            <div style="background:var(--blue);height:100%;border-radius:4px;width:${Math.round(a.total/maxAkun*100)}%"></div>
+          </div>
+        </div>`).join('')}
+    </div>`:
+    `<div style="text-align:center;padding:24px;color:var(--txt3);font-size:13px">Belum ada transaksi bulan ini.</div>`}
+
+    <!-- 5 transaksi terakhir -->
+    ${pcTrxList.filter(t=>t.dompetId===active.id).slice(-5).reverse().map(t=>`
+      <div onclick="openPCTrxDetail('${t.id}')" style="display:flex;align-items:center;justify-content:space-between;
+        padding:10px 12px;background:var(--bg2);border-radius:10px;border:1.5px solid var(--bdr);
+        margin-bottom:8px;cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--bdr2)'" onmouseout="this.style.borderColor='var(--bdr)'">
+        <div>
+          <div style="font-size:12.5px;font-weight:600;color:var(--txt)">${esc(t.keterangan||'-')}</div>
+          <div style="font-size:11px;color:var(--txt3)">${esc(t.kodeAkun||'-')} ${esc(t.namaAkun||'')} · ${fmtD(t.tanggal).split(',')[0]}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;margin-left:12px">
+          ${t.kredit>0?`<div style="font-size:13px;font-weight:700;color:var(--red);font-family:var(--mono)">-${fmt(t.kredit)}</div>`:''}
+          ${t.debit>0?`<div style="font-size:13px;font-weight:700;color:var(--green);font-family:var(--mono)">+${fmt(t.debit)}</div>`:''}
+        </div>
+      </div>`).join('')}
+  `;
+}
+
+// ─── Log Transaksi ───────────────────────────────────────────
+function renderPCLog() {
+  const myDompet = getMyPCDompet();
+  const active = myDompet.find(d=>d.id===pcActiveDompetId) || myDompet[0];
+  if (!active) return '';
+  const canEdit = isOwner() || can('finance');
+  const trxAktif = pcTrxList.filter(t=>t.dompetId===active.id);
+
+  return `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      ${myDompet.map(d=>`
+        <button class="pc-dompet-tab ${d.id===active.id?'active':''}" data-id="${d.id}"
+          style="padding:6px 12px;border-radius:9px;border:2px solid ${d.id===active.id?'var(--blue)':'var(--bdr)'};
+          background:${d.id===active.id?'var(--blue-bg)':'var(--bg2)'};color:${d.id===active.id?'var(--blue)':'var(--txt2)'};
+          font-family:var(--font);font-size:12.5px;font-weight:700;cursor:pointer">
+          ${esc(d.nama.replace('Petty Cash ',''))}
+        </button>`).join('')}
+      <button class="btn btn-ghost" id="btn-pc-export" style="margin-left:auto;font-size:12px;padding:6px 12px">
+        <i class="ti ti-file-spreadsheet" style="font-size:13px"></i> Export CSV
+      </button>
+    </div>
+
+    <div class="ktable-wrap">
+      <table class="ktable ktable-compact">
+        <thead><tr>
+          <th>Tanggal</th><th>Kode Akun</th><th>Keterangan</th>
+          <th style="text-align:right">Debit</th><th style="text-align:right">Kredit</th>
+          <th style="text-align:right">Saldo</th>${canEdit?'<th></th>':''}
+        </tr></thead>
+        <tbody>
+          ${trxAktif.length===0?`<tr><td colspan="${canEdit?7:6}" style="text-align:center;padding:20px;color:var(--txt3)">Belum ada transaksi.</td></tr>`:
+          [...trxAktif].reverse().map(t=>`
+            <tr style="cursor:pointer" onclick="openPCTrxDetail('${t.id}')">
+              <td style="white-space:nowrap">${fmtD(t.tanggal).split(',')[0]}</td>
+              <td style="font-family:var(--mono);font-size:11.5px;color:var(--txt2)">${esc(t.kodeAkun||'-')}<br><span style="font-size:10.5px">${esc(t.namaAkun||'')}</span></td>
+              <td>${esc(t.keterangan||'-')}</td>
+              <td style="text-align:right;color:var(--green);font-family:var(--mono);font-weight:600">${t.debit>0?fmt(t.debit):''}</td>
+              <td style="text-align:right;color:var(--red);font-family:var(--mono);font-weight:600">${t.kredit>0?fmt(t.kredit):''}</td>
+              <td style="text-align:right;font-family:var(--mono);font-weight:700">${fmt(t.saldo)}</td>
+              ${canEdit?`<td onclick="event.stopPropagation();openEditPCTrxModal('${t.id}')">
+                <i class="ti ti-edit" style="font-size:12px;color:var(--txt3);cursor:pointer"></i></td>`:''}
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ─── Modal Input Pengeluaran ─────────────────────────────────
+function openPCInputModal() {
+  const active = pcDompetList.find(d=>d.id===pcActiveDompetId);
+  const coaOptions = PC_COA.map(c=>`<option value="${c.kode}">${c.kode} — ${esc(c.nama)}</option>`).join('');
+
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:440px">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:var(--red-bg)"><i class="ti ti-minus" style="font-size:16px;color:var(--red)"></i></div>
+        <div><h2>Input Pengeluaran</h2><p>${esc(active?.nama||'')}</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="section"><label>Tanggal <span style="color:var(--red)">*</span></label>
+          <input type="date" class="fld" id="pc-tanggal" value="${new Date().toISOString().slice(0,10)}">
+        </div>
+        <div class="section"><label>Nominal (Rp) <span style="color:var(--red)">*</span></label>
+          <input type="text" class="fld" id="pc-nominal" placeholder="Contoh: 50.000" inputmode="numeric" oninput="formatNominalInput(this);checkPCNominalWarning()">
+          <div id="pc-nominal-warning" style="display:none;margin-top:5px;font-size:12px;color:var(--orange);font-weight:600">
+            ⚠️ Nominal di atas Rp 500.000 — pastikan sudah sesuai
+          </div>
+        </div>
+        <div class="section"><label>Kode Akun / COA <span style="color:var(--red)">*</span></label>
+          <select class="fld" id="pc-coa">
+            <option value="">— Pilih COA —</option>
+            ${coaOptions}
+          </select>
+        </div>
+        <div class="section"><label>Keterangan <span style="color:var(--red)">*</span></label>
+          <input type="text" class="fld" id="pc-keterangan" placeholder="Contoh: Beli tinta printer A3">
+        </div>
+        <div class="section"><label>Upload Bukti</label>
+          <div class="upload-zone" onclick="document.getElementById('pc-bukti-file').click()">
+            <div class="uz-ico"><i class="ti ti-camera"></i></div>
+            <p id="pc-bukti-label">Klik untuk upload foto/PDF bukti</p>
+            <input type="file" id="pc-bukti-file" accept="image/*,.pdf" style="display:none" onchange="onPCBuktiChange(this)">
+          </div>
+        </div>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-primary" onclick="submitPCTrx()"><i class="ti ti-check" style="font-size:14px"></i> Simpan Pengeluaran</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function checkPCNominalWarning() {
+  const val = Number(String(document.getElementById('pc-nominal')?.value||'').replace(/\D/g,''));
+  const warn = document.getElementById('pc-nominal-warning');
+  if (warn) warn.style.display = val > 500000 ? 'block' : 'none';
+}
+
+function onPCBuktiChange(input) {
+  const label = document.getElementById('pc-bukti-label');
+  if (label && input.files[0]) label.textContent = '✅ ' + input.files[0].name;
+}
+
+async function submitPCTrx() {
+  const tanggal   = document.getElementById('pc-tanggal')?.value;
+  const nominal   = Number(String(document.getElementById('pc-nominal')?.value||'').replace(/\D/g,''));
+  const coaEl     = document.getElementById('pc-coa');
+  const kodeAkun  = coaEl?.value;
+  const namaAkun  = coaEl?.options[coaEl.selectedIndex]?.text.split('—')[1]?.trim() || '';
+  const keterangan = document.getElementById('pc-keterangan')?.value.trim();
+  const fileInput  = document.getElementById('pc-bukti-file');
+
+  if (!tanggal||!nominal||!kodeAkun||!keterangan) {
+    showToast('Lengkapi semua field wajib','ti-alert-triangle'); return;
+  }
+
+  const active = pcDompetList.find(d=>d.id===pcActiveDompetId);
+
+  showLoader('Menyimpan pengeluaran...');
+  try {
+    let buktiUrl = '';
+    if (fileInput?.files[0]) {
+      buktiUrl = await uploadPCBukti(pcActiveDompetId, fileInput.files[0]);
+    }
+
+    const res = await apiPost({action:'addPCTrx', data:{
+      dompetId: pcActiveDompetId,
+      namaDompet: active?.nama||'',
+      tanggal, jenis:'keluar',
+      kodeAkun, namaAkun, keterangan,
+      nominal, buktiUrl,
+      inputBy: currentUser?.name||'',
+    }});
+
+    if (res.ok) {
+      showToast('Pengeluaran berhasil dicatat','ti-check');
+      closeModal();
+      await loadPCAll();
+    } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
+  } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
+  hideLoader();
+}
+
+// ─── Upload bukti ke Drive ────────────────────────────────────
+async function uploadPCBukti(dompetId, file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = async e => {
+      const base64 = e.target.result.split(',')[1];
+      try {
+        const res = await apiPost({
+          action:'uploadKasbonFile', refId:'PC_'+dompetId+'_'+Date.now(),
+          refType:'pettycash', category:'bukti_pc',
+          fileName:file.name, mimeType:file.type||'application/octet-stream',
+          base64, uploadedBy:currentUser?.name||''
+        });
+        resolve(res.ok ? res.driveUrl : '');
+      } catch(e) { resolve(''); }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ─── Modal Transfer PC003 (Bank) → PC004 (Cash) ──────────────
+function openPCTransferModal() {
+  const pc003 = pcDompetList.find(d=>d.id==='PC003');
+  const pc004 = pcDompetList.find(d=>d.id==='PC004');
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:rgba(56,139,253,.15)"><i class="ti ti-arrow-right" style="font-size:16px;color:var(--blue)"></i></div>
+        <div><h2>Transfer ke Cash</h2><p>Produksi Bank → Produksi Cash</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="row2 section" style="gap:10px">
+          <div style="background:var(--bg3);border-radius:10px;padding:10px 12px;text-align:center">
+            <div style="font-size:10px;color:var(--txt3);font-weight:700;margin-bottom:4px">DARI (Bank)</div>
+            <div style="font-size:14px;font-weight:800;font-family:var(--mono)">${fmt(pc003?.saldo||0)}</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:10px;padding:10px 12px;text-align:center">
+            <div style="font-size:10px;color:var(--txt3);font-weight:700;margin-bottom:4px">KE (Cash)</div>
+            <div style="font-size:14px;font-weight:800;font-family:var(--mono)">${fmt(pc004?.saldo||0)}</div>
+          </div>
+        </div>
+        <div class="section"><label>Nominal Transfer (Rp) <span style="color:var(--red)">*</span></label>
+          <input type="text" class="fld" id="pct-nominal" placeholder="Contoh: 500.000" inputmode="numeric" oninput="formatNominalInput(this)">
+        </div>
+        <div class="section"><label>Keterangan</label>
+          <input type="text" class="fld" id="pct-ket" placeholder="Contoh: Ambil tunai untuk keperluan produksi" value="Tarik tunai dari rekening ke kas produksi">
+        </div>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-primary" onclick="submitPCTransfer()"><i class="ti ti-arrow-right" style="font-size:14px"></i> Transfer</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function submitPCTransfer() {
+  const nominal = Number(String(document.getElementById('pct-nominal')?.value||'').replace(/\D/g,''));
+  const ket     = document.getElementById('pct-ket')?.value.trim() || 'Transfer Bank ke Cash';
+  if (!nominal) { showToast('Isi nominal transfer','ti-alert-triangle'); return; }
+
+  const pc003 = pcDompetList.find(d=>d.id==='PC003');
+  if (nominal > (pc003?.saldo||0)) { showToast('Nominal melebihi saldo Bank','ti-alert-triangle'); return; }
+
+  showLoader('Memproses transfer...');
+  try {
+    // Kurangi PC003 (Bank)
+    await apiPost({action:'addPCTrx', data:{
+      dompetId:'PC003', namaDompet:'Petty Cash Produksi - Bank',
+      tanggal:new Date().toISOString().slice(0,10),
+      jenis:'transfer_keluar', kodeAkun:'', namaAkun:'',
+      keterangan:ket+' → Cash', nominal, inputBy:currentUser?.name||'',
+    }});
+    // Tambah PC004 (Cash)
+    await apiPost({action:'addPCTrx', data:{
+      dompetId:'PC004', namaDompet:'Petty Cash Produksi - Cash',
+      tanggal:new Date().toISOString().slice(0,10),
+      jenis:'transfer_masuk', kodeAkun:'', namaAkun:'',
+      keterangan:ket+' ← Bank', nominal, inputBy:currentUser?.name||'',
+    }});
+    showToast('Transfer berhasil','ti-check');
+    closeModal();
+    await loadPCAll();
+  } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
+  hideLoader();
+}
+
+// ─── Request Top-Up ──────────────────────────────────────────
+async function doRequestTopUp(dompetId) {
+  const d = pcDompetList.find(x=>x.id===dompetId);
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:var(--orange-bg)"><i class="ti ti-arrow-up" style="font-size:16px;color:var(--orange)"></i></div>
+        <div><h2>Request Top-Up</h2><p>${esc(d?.nama||'')}</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:14px;border:1.5px solid var(--bdr)">
+          <div class="tax-row"><span>Saldo saat ini</span><span style="font-weight:700;font-family:var(--mono)">${fmt(d?.saldo||0)}</span></div>
+          <div class="tax-row"><span>Nominal top-up</span><span style="font-weight:700;font-family:var(--mono);color:var(--green)">${fmt(d?.topUpNominal||2000000)}</span></div>
+          <div class="tax-row"><span>Rekening tujuan</span><span style="font-size:12px">${esc(d?.noRekening||'')} (${esc(d?.namaBank||'')})</span></div>
+          <div class="tax-row"><span>Atas nama</span><span style="font-size:12px">${esc(d?.namaTujuan||'')}</span></div>
+        </div>
+        <p style="font-size:12.5px;color:var(--txt2);line-height:1.7">
+          Card pengajuan dana akan otomatis dibuat di Kanban Pembayaran untuk diproses Finance dan BOD. Saldo akan bertambah otomatis setelah bukti transfer diupload.
+        </p>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-warn" onclick="confirmTopUp('${dompetId}')"><i class="ti ti-send" style="font-size:14px"></i> Ya, Request Top-Up</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function confirmTopUp(dompetId) {
+  showLoader('Membuat pengajuan top-up...');
+  try {
+    const res = await apiPost({action:'requestTopUp', dompetId});
+    if (res.ok) {
+      showToast('Pengajuan top-up berhasil dibuat ('+res.trxId+')','ti-arrow-up');
+      closeModal();
+      // Refresh kanban juga supaya card baru langsung terlihat
+      await loadAll();
+    } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
+  } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
+  hideLoader();
+}
+
+// ─── Edit Saldo Manual ───────────────────────────────────────
+function openEditSaldoModal(dompetId) {
+  const d = pcDompetList.find(x=>x.id===dompetId);
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:380px">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:var(--orange-bg)"><i class="ti ti-adjustments" style="font-size:16px;color:var(--orange)"></i></div>
+        <div><h2>Penyesuaian Saldo</h2><p>${esc(d?.nama||'')}</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="section"><label>Saldo Baru (Rp)</label>
+          <input type="text" class="fld" id="pcs-saldo" value="${d?.saldo?Number(d.saldo).toLocaleString('id-ID'):0}" inputmode="numeric" oninput="formatNominalInput(this)">
+        </div>
+        <div class="section"><label>Keterangan</label>
+          <input type="text" class="fld" id="pcs-ket" placeholder="Alasan penyesuaian saldo">
+        </div>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-warn" onclick="submitEditSaldo('${dompetId}')"><i class="ti ti-check" style="font-size:14px"></i> Simpan Penyesuaian</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function submitEditSaldo(dompetId) {
+  const saldo = Number(String(document.getElementById('pcs-saldo')?.value||'').replace(/\D/g,''));
+  const ket   = document.getElementById('pcs-ket')?.value.trim();
+  showLoader('Menyimpan penyesuaian...');
+  try {
+    const res = await apiPost({action:'editPCSaldo', dompetId, saldo, keterangan:ket});
+    if (res.ok) {
+      showToast('Saldo diperbarui','ti-check');
+      closeModal();
+      await loadPCAll();
+    } else showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle');
+  } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
+  hideLoader();
+}
+
+// ─── Detail & Edit Transaksi ─────────────────────────────────
+function openPCTrxDetail(id) {
+  const t = pcTrxList.find(x=>x.id===id);
+  if (!t) return;
+  const canEdit = isOwner() || can('finance');
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:${t.kredit>0?'var(--red-bg)':'var(--green-bg)'}">
+          <i class="ti ti-${t.kredit>0?'minus':'plus'}" style="font-size:16px;color:${t.kredit>0?'var(--red)':'var(--green)'}"></i>
+        </div>
+        <div><h2>${t.kredit>0?'Pengeluaran':'Pemasukan'}</h2><p>${t.id}</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="info-grid">
+          <span class="k">Tanggal</span><span class="v plain">${fmtD(t.tanggal).split(',')[0]}</span>
+          <span class="k">Kode Akun</span><span class="v">${esc(t.kodeAkun||'-')}</span>
+          <span class="k">Nama Akun</span><span class="v plain">${esc(t.namaAkun||PC_COA_MAP[t.kodeAkun]||'-')}</span>
+          <span class="k">Keterangan</span><span class="v plain">${esc(t.keterangan||'-')}</span>
+          ${t.kredit>0?`<span class="k">Keluar</span><span class="v" style="color:var(--red)">${fmt(t.kredit)}</span>`:''}
+          ${t.debit>0?`<span class="k">Masuk</span><span class="v" style="color:var(--green)">${fmt(t.debit)}</span>`:''}
+          <span class="k">Saldo</span><span class="v">${fmt(t.saldo)}</span>
+          <span class="k">Input oleh</span><span class="v plain">${esc(t.inputBy||'-')}</span>
+        </div>
+        ${t.buktiUrl?`<div class="section" style="margin-top:12px">
+          <a href="${t.buktiUrl}" target="_blank" class="btn btn-ghost" style="font-size:12px;text-decoration:none">
+            <i class="ti ti-external-link" style="font-size:13px"></i> Lihat Bukti
+          </a></div>`:''}
+      </div>
+      ${canEdit?`<div class="action-area">
+        <button class="btn btn-warn" onclick="openEditPCTrxModal('${id}')"><i class="ti ti-edit" style="font-size:14px"></i> Edit COA / Keterangan</button>
+        <button class="btn btn-danger" onclick="confirmDeletePCTrx('${id}')"><i class="ti ti-trash" style="font-size:14px"></i> Hapus</button>
+      </div>`:''}
+    </div>
+  </div>`;
+}
+
+function openEditPCTrxModal(id) {
+  const t = pcTrxList.find(x=>x.id===id);
+  if (!t) return;
+  const coaOptions = PC_COA.map(c=>`<option value="${c.kode}" ${c.kode===t.kodeAkun?'selected':''}>${c.kode} — ${esc(c.nama)}</option>`).join('');
+  closeModal();
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:var(--orange-bg)"><i class="ti ti-edit" style="font-size:16px;color:var(--orange)"></i></div>
+        <div><h2>Edit Transaksi</h2><p>${t.id}</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="section"><label>Kode Akun / COA</label>
+          <select class="fld" id="pce-coa"><option value="">— Pilih COA —</option>${coaOptions}</select>
+        </div>
+        <div class="section"><label>Keterangan</label>
+          <input type="text" class="fld" id="pce-ket" value="${esc(t.keterangan||'')}">
+        </div>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-primary" onclick="submitEditPCTrx('${id}')"><i class="ti ti-check" style="font-size:14px"></i> Simpan</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function submitEditPCTrx(id) {
+  const coaEl   = document.getElementById('pce-coa');
+  const kodeAkun = coaEl?.value;
+  const namaAkun = kodeAkun ? PC_COA_MAP[kodeAkun]||'' : '';
+  const keterangan = document.getElementById('pce-ket')?.value.trim();
+  showLoader('Menyimpan...');
+  try {
+    const res = await apiPost({action:'editPCTrx', id, data:{kodeAkun, namaAkun, keterangan, editedBy:currentUser?.name||'Finance'}});
+    if (res.ok) {
+      showToast('Transaksi diupdate','ti-check');
+      closeModal();
+      await loadPCTrx(pcActiveDompetId);
+      renderPCBody();
+    } else showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle');
+  } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
+  hideLoader();
+}
+
+async function confirmDeletePCTrx(id) {
+  if (!confirm('Yakin hapus transaksi ini? Saldo akan di-rollback.')) return;
+  showLoader('Menghapus...');
+  try {
+    const res = await apiPost({action:'deletePCTrx', id});
+    if (res.ok) { showToast('Transaksi dihapus','ti-trash'); closeModal(); await loadPCAll(); }
+    else showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle');
+  } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
+  hideLoader();
+}
+
+// ─── Export CSV ───────────────────────────────────────────────
+async function exportPCTrxCSV() {
+  const d = pcDompetList.find(x=>x.id===pcActiveDompetId);
+  showLoader('Menyiapkan export...');
+  try {
+    const res = await apiGet({action:'exportPCTrx', dompetId:pcActiveDompetId});
+    if (!res.ok||!res.csv) { showToast('Tidak ada data','ti-alert-triangle'); hideLoader(); return; }
+
+    const blob = new Blob(['\uFEFF'+res.csv], {type:'text/csv;charset=utf-8;'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const tgl  = new Date().toISOString().slice(0,10);
+    a.href     = url;
+    a.download = 'PettyCash_'+(d?.nama||pcActiveDompetId).replace(/\s+/g,'_')+'_'+tgl+'.csv';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+    showToast('Export berhasil — '+res.total+' transaksi','ti-file-spreadsheet');
+  } catch(e) { showToast('Gagal export: '+e,'ti-alert-triangle'); }
+  hideLoader();
+}
+
+// ─── Init DB Petty Cash ───────────────────────────────────────
+function confirmInitPCDB() {
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:380px">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:var(--orange-bg)"><i class="ti ti-database" style="font-size:16px;color:var(--orange)"></i></div>
+        <div><h2>Init Database Petty Cash</h2><p>Setup sheet PettyCash & PettyCashTrx</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px;color:var(--txt2);line-height:1.7">Akan membuat sheet <strong>PettyCash</strong> dan <strong>PettyCashTrx</strong> beserta 4 dompet awal dengan saldo 0. Aman dijalankan ulang.</p>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-warn" onclick="runInitPCDB()"><i class="ti ti-database" style="font-size:14px"></i> Jalankan</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function runInitPCDB() {
+  closeModal(); showLoader('Inisialisasi database petty cash...');
+  try {
+    const res = await apiPost({action:'initPCDB'});
+    if (res.ok) { showToast('Database Petty Cash berhasil diinisialisasi','ti-database'); await loadPCAll(); }
     else showToast('Gagal: '+res.error,'ti-alert-triangle');
   } catch(e) { showToast('Error koneksi','ti-alert-triangle'); }
   hideLoader();
