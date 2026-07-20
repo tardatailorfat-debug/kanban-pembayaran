@@ -2260,7 +2260,9 @@ function removeRekeningRow(idx) {
 }
 
 function getFormRekening() {
-  const rows = document.querySelectorAll('.rekening-row');
+  const wrap = document.getElementById('rekening-wrap');
+  if (!wrap) return [];
+  const rows = wrap.querySelectorAll('.rekening-row');
   const result = [];
   rows.forEach((row) => {
     result.push({
