@@ -667,11 +667,6 @@ select.fld option{background:var(--bg2)}
         </div>
         <div id="kasbon-body" class="kasbon-body-watermark" style="flex:1;overflow-y:auto;padding:14px;position:relative"></div>
       </div>
-
-      <!-- ═══ KONTEN: PETTY CASH ═══ -->
-      <div id="menu-content-pettycash" style="display:none;flex:1;flex-direction:column;overflow:hidden">
-        <div id="pc-body" style="flex:1;overflow-y:auto;padding:16px 20px"></div>
-      </div>
     </div>
 
       <!-- ═══ KONTEN: PETTY CASH ═══ -->
@@ -857,6 +852,12 @@ const COA_LIST = [
   {kode:"6-60306",nama:"Ongkir"},
   {kode:"8-80999",nama:"Beban Lain - lain"},
 ];
+
+// Helper: lookup nama COA dari kode
+function coaNama(kode) {
+  const c = COA_LIST.find(x => x.kode === kode);
+  return c ? c.nama : (kode || '-');
+}
 
 // Pemegang petty cash: role → pcId mereka
 const PC_PEMEGANG = {
@@ -3707,8 +3708,8 @@ function renderPCRingkasan() {
   // Breakdown COA bulan ini
   const byAkun = {};
   trxBulanIni.filter(t=>t.kredit>0).forEach(t => {
-    const key = t.kodeAkun || '-';
-    if (!byAkun[key]) byAkun[key] = {kode:t.kodeAkun, nama:t.namaAkun||PC_COA_MAP[t.kodeAkun]||'-', total:0};
+    const key = t.kodeCoA || '-';
+    if (!byAkun[key]) byAkun[key] = {kode:t.kodeCoA, nama:t.namaCoA||coaNama(t.kodeCoA)||'-', total:0};
     byAkun[key].total += t.kredit;
   });
   const akunList = Object.values(byAkun).sort((a,b)=>b.total-a.total);
@@ -3797,7 +3798,7 @@ function renderPCRingkasan() {
         margin-bottom:8px;cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--bdr2)'" onmouseout="this.style.borderColor='var(--bdr)'">
         <div>
           <div style="font-size:12.5px;font-weight:600;color:var(--txt)">${esc(t.keterangan||'-')}</div>
-          <div style="font-size:11px;color:var(--txt3)">${esc(t.kodeAkun||'-')} ${esc(t.namaAkun||'')} · ${fmtD(t.tanggal).split(',')[0]}</div>
+          <div style="font-size:11px;color:var(--txt3)">${esc(t.kodeCoA||'-')} ${esc(t.namaCoA||'')} · ${fmtD(t.tanggal).split(',')[0]}</div>
         </div>
         <div style="text-align:right;flex-shrink:0;margin-left:12px">
           ${t.kredit>0?`<div style="font-size:13px;font-weight:700;color:var(--red);font-family:var(--mono)">-${fmt(t.kredit)}</div>`:''}
@@ -3841,7 +3842,7 @@ function renderPCLog() {
           [...trxAktif].reverse().map(t=>`
             <tr style="cursor:pointer" onclick="openPCTrxDetail('${t.id}')">
               <td style="white-space:nowrap">${fmtD(t.tanggal).split(',')[0]}</td>
-              <td style="font-family:var(--mono);font-size:11.5px;color:var(--txt2)">${esc(t.kodeAkun||'-')}<br><span style="font-size:10.5px">${esc(t.namaAkun||'')}</span></td>
+              <td style="font-family:var(--mono);font-size:11.5px;color:var(--txt2)">${esc(t.kodeCoA||'-')}<br><span style="font-size:10.5px">${esc(t.namaCoA||'')}</span></td>
               <td>${esc(t.keterangan||'-')}</td>
               <td style="text-align:right;color:var(--green);font-family:var(--mono);font-weight:600">${t.debit>0?fmt(t.debit):''}</td>
               <td style="text-align:right;color:var(--red);font-family:var(--mono);font-weight:600">${t.kredit>0?fmt(t.kredit):''}</td>
@@ -4147,8 +4148,8 @@ function openPCTrxDetail(id) {
       <div class="modal-body">
         <div class="info-grid">
           <span class="k">Tanggal</span><span class="v plain">${fmtD(t.tanggal).split(',')[0]}</span>
-          <span class="k">Kode Akun</span><span class="v">${esc(t.kodeAkun||'-')}</span>
-          <span class="k">Nama Akun</span><span class="v plain">${esc(t.namaAkun||PC_COA_MAP[t.kodeAkun]||'-')}</span>
+          <span class="k">Kode Akun</span><span class="v">${esc(t.kodeCoA||'-')}</span>
+          <span class="k">Nama Akun</span><span class="v plain">${esc(t.namaCoA||coaNama(t.kodeCoA)||'-')}</span>
           <span class="k">Keterangan</span><span class="v plain">${esc(t.keterangan||'-')}</span>
           ${t.kredit>0?`<span class="k">Keluar</span><span class="v" style="color:var(--red)">${fmt(t.kredit)}</span>`:''}
           ${t.debit>0?`<span class="k">Masuk</span><span class="v" style="color:var(--green)">${fmt(t.debit)}</span>`:''}
@@ -4171,7 +4172,7 @@ function openPCTrxDetail(id) {
 function openEditPCTrxModal(id) {
   const t = pcTrxList.find(x=>x.id===id);
   if (!t) return;
-  const coaOptions = PC_COA.map(c=>`<option value="${c.kode}" ${c.kode===t.kodeAkun?'selected':''}>${c.kode} — ${esc(c.nama)}</option>`).join('');
+  const coaOptions = PC_COA.map(c=>`<option value="${c.kode}" ${c.kode===t.kodeCoA?'selected':''}>${c.kode} — ${esc(c.nama)}</option>`).join('');
   closeModal();
   document.getElementById('modal-area').innerHTML = `
   <div class="overlay" onclick="if(event.target===this)closeModal()">
@@ -4200,7 +4201,7 @@ function openEditPCTrxModal(id) {
 async function submitEditPCTrx(id) {
   const coaEl   = document.getElementById('pce-coa');
   const kodeAkun = coaEl?.value;
-  const namaAkun = kodeAkun ? PC_COA_MAP[kodeAkun]||'' : '';
+  const namaAkun = kodeAkun ? coaNama(kodeAkun)||'' : '';
   const keterangan = document.getElementById('pce-ket')?.value.trim();
   showLoader('Menyimpan...');
   try {
