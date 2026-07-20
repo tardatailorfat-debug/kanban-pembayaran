@@ -2633,24 +2633,90 @@ function onKasbonPekerjaChange() {
   const pekerjaId = document.getElementById('ksb-pekerja')?.value;
   const wrap = document.getElementById('ksb-rekening-wrap');
   const sel  = document.getElementById('ksb-rekening');
-  if (!pekerjaId || !wrap || !sel) return;
+  if (!wrap || !sel) return;
 
-  const p = pekerjaList.find(x=>x.id===pekerjaId);
-  const reks = p?.rekening && p.rekening.length > 0
-    ? p.rekening
-    : (p?.noRekening ? [{noRekening:p.noRekening, namaBank:p.namaBank, namaTujuan:p.namaTujuanRekening}] : []);
+  if (!pekerjaId) { wrap.style.display = 'none'; return; }
+
+  const p = pekerjaList.find(x => x.id === pekerjaId);
+  if (!p) { wrap.style.display = 'none'; return; }
+
+  // Kumpulkan semua rekening: prioritaskan array rekening baru,
+  // fallback ke kolom legacy noRekening jika array kosong/tidak ada
+  let reks = [];
+  if (Array.isArray(p.rekening) && p.rekening.length > 0) {
+    reks = p.rekening;
+  } else if (p.noRekening) {
+    reks = [{
+      noRekening: p.noRekening,
+      namaBank: p.namaBank || '',
+      namaTujuan: p.namaTujuanRekening || ''
+    }];
+  }
 
   if (reks.length <= 1) {
-    wrap.style.display = 'none'; // hanya 1 rekening, tidak perlu pilih
+    // Hanya 1 rekening — sembunyikan dropdown tapi tetap simpan data di hidden
+    wrap.style.display = 'none';
+    sel.innerHTML = reks.map((r,i) =>
+      `<option value="${i}" data-rek='${JSON.stringify(r)}'>${esc(r.noRekening)} (${esc(r.namaBank)})</option>`
+    ).join('');
   } else {
+    // >1 rekening — tampilkan dropdown
     wrap.style.display = 'block';
     sel.innerHTML = reks.map((r,i) =>
-      `<option value="${i}">${esc(r.noRekening)} (${esc(r.namaBank)}) — ${esc(r.namaTujuan)}</option>`
+      `<option value="${i}" data-rek='${JSON.stringify(r)}'>${esc(r.noRekening)} (${esc(r.namaBank)}) — ${esc(r.namaTujuan)}</option>`
     ).join('');
   }
 }
 
-// ─── Export CSV Master Pekerja ────────────────────────────────
+// Helper: ambil rekening yang dipilih di form kasbon
+function getSelectedKasbonRekening() {
+  const pekerjaId = document.getElementById('ksb-pekerja')?.value;
+  const p = pekerjaList.find(x => x.id === pekerjaId);
+  if (!p) return {};
+
+  const sel = document.getElementById('ksb-rekening');
+  if (sel && sel.options.length > 0) {
+    const opt = sel.options[sel.selectedIndex];
+    try {
+      const r = JSON.parse(opt.getAttribute('data-rek') || '{}');
+      return { noRekening: r.noRekening, namaBank: r.namaBank, namaTujuanRekening: r.namaTujuan };
+    } catch(e) {}
+  }
+  // Fallback ke rekening pertama dari array atau legacy
+  const reks = Array.isArray(p.rekening) && p.rekening.length > 0
+    ? p.rekening
+    : [{noRekening: p.noRekening, namaBank: p.namaBank, namaTujuan: p.namaTujuanRekening}];
+  const r = reks[0] || {};
+  return { noRekening: r.noRekening||'', namaBank: r.namaBank||'', namaTujuanRekening: r.namaTujuan||'' };
+}
+
+async function submitAddKasbon() {
+  const pekerjaId = document.getElementById('ksb-pekerja')?.value;
+  const nominal = Number(String(document.getElementById('ksb-nominal')?.value||'').replace(/\D/g,''));
+  if (!pekerjaId || !nominal) { showToast('Pilih pekerja dan isi nominal','ti-alert-triangle'); return; }
+  const pekerja = pekerjaList.find(p => p.id === pekerjaId);
+  const rekening = getSelectedKasbonRekening();
+
+  const data = {
+    pekerjaId,
+    namaPekerja: pekerja?.nama || '',
+    nominal,
+    keterangan: document.getElementById('ksb-keterangan')?.value.trim() || '',
+    noRekening: rekening.noRekening || '',
+    namaBank: rekening.namaBank || '',
+    namaTujuanRekening: rekening.namaTujuanRekening || '',
+  };
+  showLoader('Menyimpan pengajuan kasbon...');
+  try {
+    const res = await apiPost({action:'addKasbon', data});
+    if (res.ok) {
+      showToast('Kasbon '+res.id+' berhasil diajukan','ti-cash-banknote');
+      closeModal();
+      await loadKasbonAll();
+    } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
+  } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
+  hideLoader();
+}
 async function exportPekerjaCSV() {
   showLoader('Menyiapkan data export...');
   try {
@@ -2782,6 +2848,8 @@ function openKasbonDetailModal(id) {
             <span class="k">Nominal</span><span class="v" style="font-weight:700">${fmt(k.nominal)}</span>
             <span class="k">Keterangan</span><span class="v plain">${esc(k.keterangan||'-')}</span>
             <span class="k">Tanggal</span><span class="v">${fmtD(k.createdAt)}</span>
+            ${k.noRekening?`<span class="k">Rekening</span><span class="v">${esc(k.noRekening)} (${esc(k.namaBank||'-')})</span>`:''}
+            ${k.namaTujuanRekening?`<span class="k">Nama Tujuan</span><span class="v plain">${esc(k.namaTujuanRekening)}</span>`:''}
           </div>
         </div>
         <div class="section"><label>Riwayat</label>${renderHistory(k.history)}</div>
