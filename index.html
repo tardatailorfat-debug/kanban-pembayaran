@@ -670,7 +670,7 @@ select.fld option{background:var(--bg2)}
     </div>
 
       <!-- ═══ KONTEN: PETTY CASH ═══ -->
-      <div id="menu-content-pettycash" style="display:none;flex:1;flex-direction:column;overflow:hidden">
+      <div id="menu-content-pettycash" style="display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0">
         <div class="menu-tabs" id="pettycash-sub-tabs">
           <button class="menu-tab active" onclick="switchPCTab('ringkasan')" id="pcsub-ringkasan">
             <i class="ti ti-layout-dashboard" style="font-size:13px"></i> Ringkasan
@@ -682,7 +682,7 @@ select.fld option{background:var(--bg2)}
             <i class="ti ti-database" style="font-size:13px"></i> Init DB
           </button>
         </div>
-        <div id="pettycash-body" style="flex:1;overflow-y:auto;padding:16px 20px"></div>
+        <div id="pettycash-body" style="flex:1;overflow-y:auto;padding:20px 24px;min-height:0"></div>
       </div>
     </div>
   </div>
@@ -3669,25 +3669,15 @@ function renderPCBody() {
   if (!body) return;
   if (pcSubTab === 'ringkasan') body.innerHTML = renderPCRingkasan();
   else if (pcSubTab === 'log') body.innerHTML = renderPCLog();
-  attachPCHandlers();
 }
 
-function attachPCHandlers() {
-  // Tombol input pengeluaran
-  document.getElementById('btn-pc-input')?.addEventListener('click', openPCInputModal);
-  document.getElementById('btn-pc-transfer')?.addEventListener('click', openPCTransferModal);
-  document.getElementById('btn-pc-topup')?.addEventListener('click', () => doRequestTopUp(pcActiveDompetId));
-  document.getElementById('btn-pc-edit-saldo')?.addEventListener('click', () => openEditSaldoModal(pcActiveDompetId));
-  document.getElementById('btn-pc-export')?.addEventListener('click', exportPCTrxCSV);
-  // Pilih dompet
-  document.querySelectorAll('.pc-dompet-tab').forEach(el => {
-    el.addEventListener('click', () => {
-      pcActiveDompetId = el.dataset.id;
-      document.querySelectorAll('.pc-dompet-tab').forEach(x => x.classList.remove('active'));
-      el.classList.add('active');
-      loadPCTrx(pcActiveDompetId).then(() => renderPCBody());
-    });
-  });
+async function selectPCDompet(id) {
+  pcActiveDompetId = id;
+  // Load transaksi dompet ini, lalu re-render
+  showLoader('Memuat...');
+  await loadPCTrx(id);
+  hideLoader();
+  renderPCBody();
 }
 
 // ─── Ringkasan ───────────────────────────────────────────────
@@ -3701,16 +3691,16 @@ function renderPCRingkasan() {
   // Statistik periode ini (bulan berjalan)
   const now = new Date();
   const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-  const trxBulanIni = pcTrxList.filter(t => t.dompetId===active.id && new Date(t.tanggal) >= firstDay);
-  const totalKeluar = trxBulanIni.reduce((s,t)=>s+(t.kredit||0),0);
-  const totalMasuk  = trxBulanIni.reduce((s,t)=>s+(t.debit||0),0);
+  const trxBulanIni = pcTrxList.filter(t => t.pcId===active.id && new Date(t.tanggal) >= firstDay);
+  const totalKeluar = trxBulanIni.reduce((s,t)=>s+((t.jenis==='keluar'||t.jenis==='transfer_keluar')?t.nominal:0),0);
+  const totalMasuk  = trxBulanIni.reduce((s,t)=>s+((t.jenis==='masuk'||t.jenis==='transfer_masuk'||t.jenis==='topup')?t.nominal:0),0);
 
   // Breakdown COA bulan ini
   const byAkun = {};
-  trxBulanIni.filter(t=>t.kredit>0).forEach(t => {
+  trxBulanIni.filter(t=>(t.jenis==='keluar'||t.jenis==='transfer_keluar')).forEach(t => {
     const key = t.kodeCoA || '-';
     if (!byAkun[key]) byAkun[key] = {kode:t.kodeCoA, nama:t.namaCoA||coaNama(t.kodeCoA)||'-', total:0};
-    byAkun[key].total += t.kredit;
+    byAkun[key].total += t.nominal;
   });
   const akunList = Object.values(byAkun).sort((a,b)=>b.total-a.total);
   const maxAkun = akunList[0]?.total || 1;
@@ -3720,89 +3710,92 @@ function renderPCRingkasan() {
 
   return `
     <!-- Tabs dompet -->
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
       ${myDompet.map(d=>`
-        <button class="pc-dompet-tab ${d.id===active.id?'active':''}" data-id="${d.id}"
-          style="padding:7px 14px;border-radius:10px;border:2px solid ${d.id===active.id?'var(--blue)':'var(--bdr)'};
+        <button onclick="selectPCDompet('${d.id}')"
+          style="padding:7px 16px;border-radius:10px;border:2px solid ${d.id===active.id?'var(--blue)':'var(--bdr)'};
           background:${d.id===active.id?'var(--blue-bg)':'var(--bg2)'};color:${d.id===active.id?'var(--blue)':'var(--txt2)'};
-          font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer">
+          font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s">
           ${esc(d.nama.replace('Petty Cash ',''))}
         </button>`).join('')}
     </div>
 
     <!-- Kartu saldo -->
-    <div style="background:var(--navy);border-radius:16px;padding:20px 24px;margin-bottom:16px;position:relative;overflow:hidden">
-      <div style="position:absolute;right:-20px;top:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
-      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">
+    <div style="background:var(--navy);border-radius:16px;padding:24px 28px;margin-bottom:16px;position:relative;overflow:hidden">
+      <div style="position:absolute;right:-20px;top:-20px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
+      <div style="position:absolute;right:60px;bottom:-40px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.03)"></div>
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">
         ${esc(active.nama)}
       </div>
-      <div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono);margin-bottom:12px">${fmt(active.saldo)}</div>
-      <div style="background:rgba(255,255,255,.15);border-radius:6px;height:6px;margin-bottom:8px">
+      <div style="font-size:32px;font-weight:800;color:#fff;font-family:var(--mono);margin-bottom:14px;letter-spacing:-.02em">${fmt(active.saldo)}</div>
+      <div style="background:rgba(255,255,255,.15);border-radius:6px;height:7px;margin-bottom:10px">
         <div style="background:${saldoColor};height:100%;border-radius:6px;width:${Math.min(pctSaldo,100)}%;transition:width .5s"></div>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:11.5px;color:rgba(255,255,255,.55)">
-        <span>Saldo tersisa</span>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,.55)">
+        <span>Saldo tersisa ${Math.round(pctSaldo)}%</span>
         ${active.topUpNominal>0?`<span>Kapasitas: ${fmt(active.topUpNominal)}</span>`:''}
       </div>
     </div>
 
     <!-- Stat bulan ini -->
-    <div class="row2" style="gap:10px;margin-bottom:16px">
-      <div style="background:var(--bg2);border-radius:12px;padding:14px;border:1.5px solid var(--bdr)">
-        <div style="font-size:10.5px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Keluar Bulan Ini</div>
-        <div style="font-size:18px;font-weight:800;font-family:var(--mono);color:var(--txt)">${fmt(totalKeluar)}</div>
+    <div class="row2" style="gap:12px;margin-bottom:16px">
+      <div style="background:var(--bg2);border-radius:12px;padding:16px;border:1.5px solid var(--bdr)">
+        <div style="font-size:10.5px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Keluar Bulan Ini</div>
+        <div style="font-size:20px;font-weight:800;font-family:var(--mono);color:var(--txt)">${fmt(totalKeluar)}</div>
       </div>
-      <div style="background:var(--bg2);border-radius:12px;padding:14px;border:1.5px solid var(--bdr)">
-        <div style="font-size:10.5px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Masuk Bulan Ini</div>
-        <div style="font-size:18px;font-weight:800;font-family:var(--mono);color:var(--txt)">${fmt(totalMasuk)}</div>
+      <div style="background:var(--bg2);border-radius:12px;padding:16px;border:1.5px solid var(--bdr)">
+        <div style="font-size:10.5px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Masuk Bulan Ini</div>
+        <div style="font-size:20px;font-weight:800;font-family:var(--mono);color:var(--txt)">${fmt(totalMasuk)}</div>
       </div>
     </div>
 
     <!-- Tombol aksi -->
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
-      <button class="btn btn-primary" id="btn-pc-input" style="flex:1;min-width:120px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px">
+      <button class="btn btn-primary" onclick="openPCInputModal()" style="flex:1;min-width:140px">
         <i class="ti ti-minus" style="font-size:13px"></i> Input Pengeluaran
       </button>
-      ${active.id==='PC003'?`<button class="btn btn-ghost" id="btn-pc-transfer" style="flex:1;min-width:120px">
+      ${active.id==='PC003'?`<button class="btn btn-ghost" onclick="openPCTransferModal()" style="flex:1;min-width:140px">
         <i class="ti ti-arrow-right" style="font-size:13px"></i> Transfer ke Cash
       </button>`:''}
-      ${active.topUpNominal>0?`<button class="btn btn-warn" id="btn-pc-topup" style="flex:1;min-width:120px">
+      ${active.topUpNominal>0?`<button class="btn btn-warn" onclick="doRequestTopUp('${active.id}')" style="flex:1;min-width:140px">
         <i class="ti ti-arrow-up" style="font-size:13px"></i> Request Top-Up
       </button>`:''}
-      ${canEdit?`<button class="btn btn-ghost" id="btn-pc-edit-saldo" style="padding:10px 12px">
-        <i class="ti ti-adjustments" style="font-size:13px"></i>
+      ${canEdit?`<button class="btn btn-ghost" onclick="openEditSaldoModal('${active.id}')" style="padding:10px 14px" title="Edit Saldo">
+        <i class="ti ti-adjustments" style="font-size:14px"></i>
+      </button>`:''}
+      ${canEdit?`<button class="btn btn-ghost" onclick="openEditSaldoModal('${active.id}')" style="padding:10px 14px;display:none" id="btn-pc-edit-saldo">
       </button>`:''}
     </div>
 
     <!-- Breakdown COA -->
     ${akunList.length>0?`
-    <div style="background:var(--bg2);border-radius:12px;padding:16px;border:1.5px solid var(--bdr);margin-bottom:16px">
-      <div style="font-size:11px;font-weight:800;color:var(--txt2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Pengeluaran per Akun — Bulan Ini</div>
+    <div style="background:var(--bg2);border-radius:12px;padding:18px;border:1.5px solid var(--bdr);margin-bottom:16px">
+      <div style="font-size:11px;font-weight:800;color:var(--txt2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px">Pengeluaran per Akun — Bulan Ini</div>
       ${akunList.slice(0,8).map(a=>`
-        <div style="margin-bottom:10px">
-          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px">
             <span style="color:var(--txt);font-weight:600">${esc(a.kode)} <span style="color:var(--txt3);font-weight:400">${esc(a.nama)}</span></span>
-            <span style="font-family:var(--mono);font-size:11.5px;font-weight:700">${fmt(a.total)}</span>
+            <span style="font-family:var(--mono);font-size:12px;font-weight:700">${fmt(a.total)}</span>
           </div>
           <div style="background:var(--bg3);border-radius:4px;height:5px;overflow:hidden">
             <div style="background:var(--blue);height:100%;border-radius:4px;width:${Math.round(a.total/maxAkun*100)}%"></div>
           </div>
         </div>`).join('')}
     </div>`:
-    `<div style="text-align:center;padding:24px;color:var(--txt3);font-size:13px">Belum ada transaksi bulan ini.</div>`}
+    `<div style="text-align:center;padding:28px;color:var(--txt3);font-size:13px;font-weight:600">Belum ada transaksi bulan ini.</div>`}
 
     <!-- 5 transaksi terakhir -->
-    ${pcTrxList.filter(t=>t.dompetId===active.id).slice(-5).reverse().map(t=>`
+    ${pcTrxList.filter(t=>t.pcId===active.id).slice(-5).reverse().map(t=>`
       <div onclick="openPCTrxDetail('${t.id}')" style="display:flex;align-items:center;justify-content:space-between;
-        padding:10px 12px;background:var(--bg2);border-radius:10px;border:1.5px solid var(--bdr);
+        padding:12px 14px;background:var(--bg2);border-radius:10px;border:1.5px solid var(--bdr);
         margin-bottom:8px;cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--bdr2)'" onmouseout="this.style.borderColor='var(--bdr)'">
         <div>
-          <div style="font-size:12.5px;font-weight:600;color:var(--txt)">${esc(t.keterangan||'-')}</div>
-          <div style="font-size:11px;color:var(--txt3)">${esc(t.kodeCoA||'-')} ${esc(t.namaCoA||'')} · ${fmtD(t.tanggal).split(',')[0]}</div>
+          <div style="font-size:13px;font-weight:600;color:var(--txt)">${esc(t.keterangan||'-')}</div>
+          <div style="font-size:11.5px;color:var(--txt3);margin-top:2px">${esc(t.kodeCoA||'-')} ${esc(t.namaCoA||'')} · ${fmtD(t.tanggal).split(',')[0]}</div>
         </div>
-        <div style="text-align:right;flex-shrink:0;margin-left:12px">
-          ${t.kredit>0?`<div style="font-size:13px;font-weight:700;color:var(--red);font-family:var(--mono)">-${fmt(t.kredit)}</div>`:''}
-          ${t.debit>0?`<div style="font-size:13px;font-weight:700;color:var(--green);font-family:var(--mono)">+${fmt(t.debit)}</div>`:''}
+        <div style="text-align:right;flex-shrink:0;margin-left:14px">
+          ${(t.jenis==='keluar'||t.jenis==='transfer_keluar')?`<div style="font-size:14px;font-weight:700;color:var(--red);font-family:var(--mono)">-${fmt(t.nominal)}</div>`:
+            `<div style="font-size:14px;font-weight:700;color:var(--green);font-family:var(--mono)">+${fmt(t.nominal)}</div>`}
         </div>
       </div>`).join('')}
   `;
@@ -3814,7 +3807,7 @@ function renderPCLog() {
   const active = myDompet.find(d=>d.id===pcActiveDompetId) || myDompet[0];
   if (!active) return '';
   const canEdit = isOwner() || can('finance');
-  const trxAktif = pcTrxList.filter(t=>t.dompetId===active.id);
+  const trxAktif = pcTrxList.filter(t=>t.pcId===active.id);
 
   return `
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
@@ -3825,7 +3818,7 @@ function renderPCLog() {
           font-family:var(--font);font-size:12.5px;font-weight:700;cursor:pointer">
           ${esc(d.nama.replace('Petty Cash ',''))}
         </button>`).join('')}
-      <button class="btn btn-ghost" id="btn-pc-export" style="margin-left:auto;font-size:12px;padding:6px 12px">
+      <button class="btn btn-ghost" onclick="exportPCTrxCSV()" style="margin-left:auto;font-size:12px;padding:6px 12px">
         <i class="ti ti-file-spreadsheet" style="font-size:13px"></i> Export CSV
       </button>
     </div>
@@ -3839,17 +3832,21 @@ function renderPCLog() {
         </tr></thead>
         <tbody>
           ${trxAktif.length===0?`<tr><td colspan="${canEdit?7:6}" style="text-align:center;padding:20px;color:var(--txt3)">Belum ada transaksi.</td></tr>`:
-          [...trxAktif].reverse().map(t=>`
+          [...trxAktif].map(t=>{
+            const isMasuk = t.jenis==='masuk'||t.jenis==='transfer_masuk'||t.jenis==='topup';
+            const debit  = isMasuk  ? t.nominal : 0;
+            const kredit = !isMasuk ? t.nominal : 0;
+            return `
             <tr style="cursor:pointer" onclick="openPCTrxDetail('${t.id}')">
               <td style="white-space:nowrap">${fmtD(t.tanggal).split(',')[0]}</td>
               <td style="font-family:var(--mono);font-size:11.5px;color:var(--txt2)">${esc(t.kodeCoA||'-')}<br><span style="font-size:10.5px">${esc(t.namaCoA||'')}</span></td>
               <td>${esc(t.keterangan||'-')}</td>
-              <td style="text-align:right;color:var(--green);font-family:var(--mono);font-weight:600">${t.debit>0?fmt(t.debit):''}</td>
-              <td style="text-align:right;color:var(--red);font-family:var(--mono);font-weight:600">${t.kredit>0?fmt(t.kredit):''}</td>
-              <td style="text-align:right;font-family:var(--mono);font-weight:700">${fmt(t.saldo)}</td>
+              <td style="text-align:right;color:var(--green);font-family:var(--mono);font-weight:600">${debit>0?fmt(debit):''}</td>
+              <td style="text-align:right;color:var(--red);font-family:var(--mono);font-weight:600">${kredit>0?fmt(kredit):''}</td>
+              <td style="text-align:right;font-family:var(--mono);font-weight:700">${fmt(t.saldoSesudah)}</td>
               ${canEdit?`<td onclick="event.stopPropagation();openEditPCTrxModal('${t.id}')">
                 <i class="ti ti-edit" style="font-size:12px;color:var(--txt3);cursor:pointer"></i></td>`:''}
-            </tr>`).join('')}
+            </tr>`;}).join('')}
         </tbody>
       </table>
     </div>
@@ -3859,7 +3856,8 @@ function renderPCLog() {
 // ─── Modal Input Pengeluaran ─────────────────────────────────
 function openPCInputModal() {
   const active = pcDompetList.find(d=>d.id===pcActiveDompetId);
-  const coaOptions = PC_COA.map(c=>`<option value="${c.kode}">${c.kode} — ${esc(c.nama)}</option>`).join('');
+  if (!active) { showToast('Pilih dompet petty cash dulu','ti-alert-triangle'); return; }
+  const coaOptions = COA_LIST.map(c=>`<option value="${c.kode}">${c.kode} — ${esc(c.nama)}</option>`).join('');
 
   document.getElementById('modal-area').innerHTML = `
   <div class="overlay" onclick="if(event.target===this)closeModal()">
@@ -4139,10 +4137,10 @@ function openPCTrxDetail(id) {
   <div class="overlay" onclick="if(event.target===this)closeModal()">
     <div class="modal" style="max-width:420px">
       <div class="modal-hdr">
-        <div class="m-icon" style="background:${t.kredit>0?'var(--red-bg)':'var(--green-bg)'}">
-          <i class="ti ti-${t.kredit>0?'minus':'plus'}" style="font-size:16px;color:${t.kredit>0?'var(--red)':'var(--green)'}"></i>
+        <div class="m-icon" style="background:${(t.jenis==='keluar'||t.jenis==='transfer_keluar')?'var(--red-bg)':'var(--green-bg)'}">
+          <i class="ti ti-${(t.jenis==='keluar'||t.jenis==='transfer_keluar')?'minus':'plus'}" style="font-size:16px;color:${(t.jenis==='keluar'||t.jenis==='transfer_keluar')?'var(--red)':'var(--green)'}"></i>
         </div>
-        <div><h2>${t.kredit>0?'Pengeluaran':'Pemasukan'}</h2><p>${t.id}</p></div>
+        <div><h2>${(t.jenis==='keluar'||t.jenis==='transfer_keluar')?'Pengeluaran':'Pemasukan'}</h2><p>${t.id}</p></div>
         <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
       </div>
       <div class="modal-body">
@@ -4151,13 +4149,13 @@ function openPCTrxDetail(id) {
           <span class="k">Kode Akun</span><span class="v">${esc(t.kodeCoA||'-')}</span>
           <span class="k">Nama Akun</span><span class="v plain">${esc(t.namaCoA||coaNama(t.kodeCoA)||'-')}</span>
           <span class="k">Keterangan</span><span class="v plain">${esc(t.keterangan||'-')}</span>
-          ${t.kredit>0?`<span class="k">Keluar</span><span class="v" style="color:var(--red)">${fmt(t.kredit)}</span>`:''}
-          ${t.debit>0?`<span class="k">Masuk</span><span class="v" style="color:var(--green)">${fmt(t.debit)}</span>`:''}
-          <span class="k">Saldo</span><span class="v">${fmt(t.saldo)}</span>
-          <span class="k">Input oleh</span><span class="v plain">${esc(t.inputBy||'-')}</span>
+          ${(t.jenis==='keluar'||t.jenis==='transfer_keluar')?`<span class="k">Keluar</span><span class="v" style="color:var(--red)">${fmt(t.nominal)}</span>`:''}
+          ${(t.jenis==='masuk'||t.jenis==='transfer_masuk'||t.jenis==='topup')?`<span class="k">Masuk</span><span class="v" style="color:var(--green)">${fmt(t.nominal)}</span>`:''}
+          <span class="k">Saldo</span><span class="v">${fmt(t.saldoSesudah)}</span>
+          <span class="k">Input oleh</span><span class="v plain">${esc(t.uploadedBy||'-')}</span>
         </div>
-        ${t.buktiUrl?`<div class="section" style="margin-top:12px">
-          <a href="${t.buktiUrl}" target="_blank" class="btn btn-ghost" style="font-size:12px;text-decoration:none">
+        ${t.driveUrl?`<div class="section" style="margin-top:12px">
+          <a href="${t.driveUrl}" target="_blank" class="btn btn-ghost" style="font-size:12px;text-decoration:none">
             <i class="ti ti-external-link" style="font-size:13px"></i> Lihat Bukti
           </a></div>`:''}
       </div>
@@ -4172,7 +4170,7 @@ function openPCTrxDetail(id) {
 function openEditPCTrxModal(id) {
   const t = pcTrxList.find(x=>x.id===id);
   if (!t) return;
-  const coaOptions = PC_COA.map(c=>`<option value="${c.kode}" ${c.kode===t.kodeCoA?'selected':''}>${c.kode} — ${esc(c.nama)}</option>`).join('');
+  const coaOptions = COA_LIST.map(c=>`<option value="${c.kode}" ${c.kode===t.kodeCoA?'selected':''}>${c.kode} — ${esc(c.nama)}</option>`).join('');
   closeModal();
   document.getElementById('modal-area').innerHTML = `
   <div class="overlay" onclick="if(event.target===this)closeModal()">
