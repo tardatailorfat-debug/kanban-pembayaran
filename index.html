@@ -707,7 +707,7 @@ const API = 'https://script.google.com/macros/s/AKfycbxb0bUxkWGda81Y9Aq0L9oxjmX9
 
 const PASSWORDS = {
   owner:             'useradmin123',
-  finance:           'superman999',
+  finance:           'superman123',
   releaser:          'bosziyad123',
   divisi_produksi:   'hahahihi',
   sales:             'pritha123',
@@ -2897,27 +2897,6 @@ async function exportPekerjaCSV() {
   hideLoader();
 }
 
-async function submitAddKasbon() {
-  const pekerjaId = document.getElementById('ksb-pekerja')?.value;
-  const nominal = Number(String(document.getElementById('ksb-nominal')?.value||'').replace(/\D/g,''));
-  if (!pekerjaId || !nominal) { showToast('Pilih pekerja dan isi nominal','ti-alert-triangle'); return; }
-  const pekerja = pekerjaList.find(p=>p.id===pekerjaId);
-
-  const data = {
-    pekerjaId, namaPekerja: pekerja?.nama || '',
-    nominal, keterangan: document.getElementById('ksb-keterangan')?.value.trim() || '',
-  };
-  showLoader('Menyimpan pengajuan kasbon...');
-  try {
-    const res = await apiPost({action:'addKasbon', data});
-    if (res.ok) {
-      showToast('Kasbon '+res.id+' berhasil diajukan','ti-cash-banknote');
-      closeModal();
-      await loadKasbonAll();
-    } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
-  } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
-  hideLoader();
-}
 
 async function updateKasbonStatus(id, patch, histMsg) {
   // OPTIMISTIC UPDATE: ubah state lokal & UI dulu, baru kirim ke server.
@@ -3935,37 +3914,39 @@ function onPCBuktiChange(input) {
 }
 
 async function submitPCTrx() {
-  const tanggal   = document.getElementById('pc-tanggal')?.value;
-  const nominal   = Number(String(document.getElementById('pc-nominal')?.value||'').replace(/\D/g,''));
-  const coaEl     = document.getElementById('pc-coa');
-  const kodeAkun  = coaEl?.value;
-  const namaAkun  = coaEl?.options[coaEl.selectedIndex]?.text.split('—')[1]?.trim() || '';
+  const tanggal    = document.getElementById('pc-tanggal')?.value;
+  const nominal    = Number(String(document.getElementById('pc-nominal')?.value||'').replace(/\D/g,''));
+  const coaEl      = document.getElementById('pc-coa');
+  const kodeCoA    = coaEl?.value || '';
+  const namaCoA    = coaEl?.options[coaEl.selectedIndex]?.text.split('—')[1]?.trim() || '';
   const keterangan = document.getElementById('pc-keterangan')?.value.trim();
   const fileInput  = document.getElementById('pc-bukti-file');
 
-  if (!tanggal||!nominal||!kodeAkun||!keterangan) {
+  if (!tanggal || !nominal || !kodeCoA || !keterangan) {
     showToast('Lengkapi semua field wajib','ti-alert-triangle'); return;
   }
 
-  const active = pcDompetList.find(d=>d.id===pcActiveDompetId);
-
   showLoader('Menyimpan pengeluaran...');
   try {
-    let buktiUrl = '';
+    // Upload bukti dulu jika ada file
+    let fileId = '', driveUrl = '';
     if (fileInput?.files[0]) {
-      buktiUrl = await uploadPCBukti(pcActiveDompetId, fileInput.files[0]);
+      const uploadRes = await uploadPCBukti(pcActiveDompetId, fileInput.files[0]);
+      fileId   = uploadRes.fileId   || '';
+      driveUrl = uploadRes.driveUrl || '';
     }
 
     const res = await apiPost({action:'addPettyCashTrx', data:{
       pcId: pcActiveDompetId,
-      namaDompet: active?.nama||'',
-      tanggal, jenis:'keluar',
-      kodeAkun, namaAkun, keterangan,
-      nominal, buktiUrl,
-      inputBy: currentUser?.name||'',
+      tanggal, nominal, kodeCoA, namaCoA, keterangan,
+      uploadedBy: currentUser?.name || '',
+      fileId, driveUrl,
     }});
 
     if (res.ok) {
+      // Optimistic: update saldo lokal langsung
+      const idx = pcDompetList.findIndex(d=>d.id===pcActiveDompetId);
+      if (idx !== -1) pcDompetList[idx].saldo = res.saldoAfter ?? (pcDompetList[idx].saldo - nominal);
       showToast('Pengeluaran berhasil dicatat','ti-check');
       closeModal();
       await loadPCAll();
@@ -3974,21 +3955,22 @@ async function submitPCTrx() {
   hideLoader();
 }
 
-// ─── Upload bukti ke Drive ────────────────────────────────────
+// ─── Upload bukti ke Drive via uploadPCFile ───────────────────
 async function uploadPCBukti(pcId, file) {
   return new Promise(resolve => {
     const reader = new FileReader();
     reader.onload = async e => {
       const base64 = e.target.result.split(',')[1];
+      const trxId  = 'PC_' + pcId + '_' + Date.now();
       try {
         const res = await apiPost({
-          action:'uploadKasbonFile', refId:'PC_'+dompetId+'_'+Date.now(),
-          refType:'pettycash', category:'bukti_pc',
-          fileName:file.name, mimeType:file.type||'application/octet-stream',
+          action:'uploadPCFile',
+          trxId, fileName:file.name,
+          mimeType:file.type||'application/octet-stream',
           base64, uploadedBy:currentUser?.name||''
         });
-        resolve(res.ok ? res.driveUrl : '');
-      } catch(e) { resolve(''); }
+        resolve(res.ok ? { fileId:res.fileId||'', driveUrl:res.driveUrl||'' } : { fileId:'', driveUrl:'' });
+      } catch(e) { resolve({ fileId:'', driveUrl:'' }); }
     };
     reader.readAsDataURL(file);
   });
@@ -4042,23 +4024,18 @@ async function submitPCTransfer() {
 
   showLoader('Memproses transfer...');
   try {
-    // Kurangi PC003 (Bank)
-    await apiPost({action:'addPettyCashTrx', data:{
-      pcId:'PC003', namaDompet:'Petty Cash Produksi - Bank',
-      tanggal:new Date().toISOString().slice(0,10),
-      jenis:'transfer_keluar', kodeAkun:'', namaAkun:'',
-      keterangan:ket+' → Cash', nominal, inputBy:currentUser?.name||'',
-    }});
-    // Tambah PC004 (Cash)
-    await apiPost({action:'addPettyCashTrx', data:{
-      pcId:'PC004', namaDompet:'Petty Cash Produksi - Cash',
-      tanggal:new Date().toISOString().slice(0,10),
-      jenis:'transfer_masuk', kodeAkun:'', namaAkun:'',
-      keterangan:ket+' ← Bank', nominal, inputBy:currentUser?.name||'',
-    }});
-    showToast('Transfer berhasil','ti-check');
-    closeModal();
-    await loadPCAll();
+    // Gunakan transferPC yang atomik (update dua dompet sekaligus)
+    const res = await apiPost({
+      action:'transferPC',
+      pcIdFrom:'PC003', pcIdTo:'PC004',
+      nominal, keterangan:ket,
+      uploadedBy:currentUser?.name||''
+    });
+    if (res.ok) {
+      showToast('Transfer berhasil','ti-check');
+      closeModal();
+      await loadPCAll();
+    } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
   } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
   hideLoader();
 }
@@ -4096,7 +4073,7 @@ async function doRequestTopUp(dompetId) {
 async function confirmTopUp(dompetId) {
   showLoader('Membuat pengajuan top-up...');
   try {
-    const res = await apiPost({action:'requestTopUp', dompetId});
+    const res = await apiPost({action:'requestTopUpPC', pcId:dompetId, requestedBy:currentUser?.name||''});
     if (res.ok) {
       showToast('Pengajuan top-up berhasil dibuat ('+res.trxId+')','ti-arrow-up');
       closeModal();
