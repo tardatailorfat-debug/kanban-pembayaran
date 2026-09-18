@@ -706,12 +706,12 @@ select.fld option{background:var(--bg2)}
 const API = 'https://script.google.com/macros/s/AKfycbxb0bUxkWGda81Y9Aq0L9oxjmX9nMr-x90Gxrf9eU40FBEZSaTnoQ9XuwcdPtqxz0ZbTA/exec';
 
 const PASSWORDS = {
-  owner:             'owner123',
-  finance:           'finance123',
-  releaser:          'releaser123',
-  divisi_produksi:   'produksi123',
+  owner:             'useradmin123',
+  finance:           'superman123',
+  releaser:          'bosziyad123',
+  divisi_produksi:   'hahahihi',
   sales:             'sales123',
-  divisi_marketing:  'marketing123',
+  divisi_marketing:  'marketing1473',
   umum:              'tardaumum123',
   kepala_produksi:   'hanyapakoen999',
   rumah_tangga_produksi: 'madrid123',
@@ -2282,25 +2282,55 @@ function switchKasbonSubTab(tab) {
   ['master','kasbon','gaji_mingguan','gaji_bulanan'].forEach(t => {
     document.getElementById('ksub-'+t.replace('_','-'))?.classList.toggle('active', t===tab);
   });
-  renderKasbonBody();
+  // Lazy load: fetch hanya jika belum pernah di-load
+  loadKasbonTab(tab);
 }
 
 // ─── Load semua data Kasbon ───────────────────────────────────
+// Track apa yang sudah di-load agar tidak fetch ulang tiap switch tab
+const kasbonLoaded = { master:false, kasbon:false, gaji_mingguan:false, gaji_bulanan:false };
+
+function invalidateKasbonCache() {
+  Object.keys(kasbonLoaded).forEach(k => kasbonLoaded[k] = false);
+}
+
 async function loadKasbonAll() {
-  showLoader('Memuat data kasbon...');
+  // Hanya load data untuk sub-tab yang aktif (lazy load)
+  await loadKasbonTab(kasbonSubTab);
+}
+
+async function loadKasbonTab(tab, force) {
+  if (!force && kasbonLoaded[tab]) {
+    renderKasbonBody();
+    return;
+  }
+  showLoader('Memuat data...');
   try {
-    const [rPekerja, rKasbon, rGMing, rGBulan] = await Promise.all([
-      apiGet({action:'getPekerja'}),
-      apiGet({action:'getKasbon'}),
-      apiGet({action:'getGajiMingguan'}),
-      apiGet({action:'getGajiBulanan'}),
-    ]);
-    if (rPekerja.ok) pekerjaList = rPekerja.data || [];
-    if (rKasbon.ok) kasbonList = rKasbon.data || [];
-    if (rGMing.ok) gajiMingguanList = rGMing.data || [];
-    if (rGBulan.ok) gajiBulananList = rGBulan.data || [];
+    if (tab === 'master') {
+      const r = await apiGet({action:'getPekerja'});
+      if (r.ok) { pekerjaList = r.data || []; kasbonLoaded.master = true; }
+    } else if (tab === 'kasbon') {
+      // Kasbon juga butuh pekerjaList untuk tampil nama
+      const calls = [apiGet({action:'getKasbon'})];
+      if (!kasbonLoaded.master) calls.push(apiGet({action:'getPekerja'}));
+      const [rK, rP] = await Promise.all(calls);
+      if (rK.ok) { kasbonList = rK.data || []; kasbonLoaded.kasbon = true; }
+      if (rP?.ok) { pekerjaList = rP.data || []; kasbonLoaded.master = true; }
+    } else if (tab === 'gaji_mingguan') {
+      const calls = [apiGet({action:'getGajiMingguan'})];
+      if (!kasbonLoaded.master) calls.push(apiGet({action:'getPekerja'}));
+      const [rG, rP] = await Promise.all(calls);
+      if (rG.ok) { gajiMingguanList = rG.data || []; kasbonLoaded.gaji_mingguan = true; }
+      if (rP?.ok) { pekerjaList = rP.data || []; kasbonLoaded.master = true; }
+    } else if (tab === 'gaji_bulanan') {
+      const calls = [apiGet({action:'getGajiBulanan'})];
+      if (!kasbonLoaded.master) calls.push(apiGet({action:'getPekerja'}));
+      const [rG, rP] = await Promise.all(calls);
+      if (rG.ok) { gajiBulananList = rG.data || []; kasbonLoaded.gaji_bulanan = true; }
+      if (rP?.ok) { pekerjaList = rP.data || []; kasbonLoaded.master = true; }
+    }
   } catch(e) {
-    showToast('Gagal memuat data kasbon','ti-alert-triangle');
+    showToast('Gagal memuat data','ti-alert-triangle');
   }
   renderKasbonBody();
   hideLoader();
@@ -2503,7 +2533,7 @@ async function submitAddPekerja() {
     if (res.ok) {
       showToast('Pekerja '+nama+' berhasil ditambahkan','ti-user-plus');
       closeModal();
-      await loadKasbonAll();
+      invalidateKasbonCache(); await loadKasbonTab(kasbonSubTab, true);
     } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
   } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
   hideLoader();
@@ -2597,7 +2627,7 @@ async function runDeletePekerja(id) {
     if (res.ok) {
       showToast('Pekerja berhasil dihapus','ti-trash');
       closeModal();
-      await loadKasbonAll();
+      invalidateKasbonCache(); await loadKasbonTab(kasbonSubTab, true);
     } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
   } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
   hideLoader();
@@ -2610,22 +2640,58 @@ async function loadRiwayatKasbonModal(pekerjaId) {
   try {
     const res = await apiGet({action:'getRiwayatKasbon', pekerjaId});
     const data = res.ok ? res.data : [];
-    if (data.length === 0) { container.innerHTML = '<span style="color:var(--txt3)">Belum ada riwayat.</span>'; return; }
-    container.innerHTML = data.map(r => {
-      const isNaik = r.saldoSesudah > r.saldoSebelum;
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)">
-        <div>
-          <div style="font-size:12px;color:var(--txt)">${esc(r.keterangan || (isNaik?'Penambahan kasbon':'Potongan kasbon'))}</div>
-          <div style="font-size:10.5px;color:var(--txt3)">${fmtD(r.createdAt)}</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:12.5px;font-weight:600;color:${isNaik?'var(--orange)':'var(--green)'}">${isNaik?'+':'-'}${fmt(r.nominal)}</div>
-          <div style="font-size:10px;color:var(--txt3)">Saldo: ${fmt(r.saldoSesudah)}</div>
-        </div>
+    if (data.length === 0) {
+      container.innerHTML = '<span style="color:var(--txt3);font-size:12px">Belum ada riwayat kasbon.</span>';
+      return;
+    }
+
+    // Label per jenis yang mudah dibaca
+    const jenisLabel = {
+      'kasbon_diajukan':    '💰 Kasbon Diajukan',
+      'tambah_kasbon':      '💰 Kasbon Dicairkan',
+      'potong_gaji_mingguan': '✂️ Potongan Gaji Mingguan',
+      'potong_gaji_bulanan':  '✂️ Potongan Gaji Bulanan',
+      'koreksi_tambah':     '⚙️ Koreksi Saldo (+)',
+      'koreksi_kurang':     '⚙️ Koreksi Saldo (-)',
+      'saldo_awal':         '🏁 Saldo Awal',
+      'edit_manual':        '✏️ Edit Manual',
+    };
+
+    container.innerHTML = `
+      <div class="ktable-wrap" style="margin-top:8px">
+        <table class="ktable ktable-compact" style="font-size:11.5px">
+          <thead><tr>
+            <th>Tanggal</th>
+            <th>Keterangan</th>
+            <th style="text-align:right;color:var(--orange)">Kasbon Naik</th>
+            <th style="text-align:right;color:var(--green)">Kasbon Turun</th>
+            <th style="text-align:right">Saldo</th>
+          </tr></thead>
+          <tbody>
+            ${data.map(r => {
+              const naik   = r.saldoSesudah > r.saldoSebelum;
+              const label  = jenisLabel[r.jenis] || r.jenis || '-';
+              const tgl    = r.createdAt ? fmtD(r.createdAt).split(',')[0] : '-';
+              return `<tr>
+                <td style="white-space:nowrap;color:var(--txt2)">${tgl}</td>
+                <td>
+                  <div style="font-weight:600">${label}</div>
+                  <div style="font-size:10.5px;color:var(--txt3);margin-top:1px">${esc(r.keterangan||'')}</div>
+                </td>
+                <td style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--orange)">
+                  ${naik ? fmt(r.nominal) : ''}
+                </td>
+                <td style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--green)">
+                  ${!naik ? fmt(r.nominal) : ''}
+                </td>
+                <td style="text-align:right;font-family:var(--mono);font-weight:700">${fmt(r.saldoSesudah)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
       </div>`;
-    }).join('');
   } catch(e) {
-    container.innerHTML = '<span style="color:var(--red)">Gagal memuat riwayat.</span>';
+    container.innerHTML = '<span style="color:var(--red);font-size:12px">Gagal memuat riwayat.</span>';
   }
 }
 
@@ -2691,6 +2757,7 @@ async function submitEditPekerja() {
     rekening: rekeningArr,
     gajiFix: Number(String(document.getElementById('pk-gajifix')?.value||'').replace(/\D/g,'')) || 0,
     saldoKasbon: Number(String(document.getElementById('pk-saldokasbon')?.value||'').replace(/\D/g,'')) || 0,
+    editedBy: currentUser?.name || 'Finance/Owner',
   };
   showLoader('Menyimpan...');
   try {
@@ -2698,7 +2765,7 @@ async function submitEditPekerja() {
     if (res.ok) {
       showToast('Data pekerja diupdate','ti-check');
       closeModal();
-      await loadKasbonAll();
+      invalidateKasbonCache(); await loadKasbonTab(kasbonSubTab, true);
     } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
   } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
   hideLoader();
@@ -2868,7 +2935,7 @@ async function submitAddKasbon() {
     if (res.ok) {
       showToast('Kasbon '+res.id+' berhasil diajukan','ti-cash-banknote');
       closeModal();
-      await loadKasbonAll();
+      invalidateKasbonCache(); await loadKasbonTab(kasbonSubTab, true);
     } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
   } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
   hideLoader();
@@ -3155,7 +3222,7 @@ async function submitAddGajiMingguan() {
     if (res.ok) {
       showToast('Batch gaji '+res.id+' berhasil diajukan','ti-calendar-week');
       closeModal();
-      await loadKasbonAll();
+      invalidateKasbonCache(); await loadKasbonTab(kasbonSubTab, true);
     } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
   } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
   hideLoader();
@@ -3424,7 +3491,7 @@ async function submitAddGajiBulanan() {
     if (res.ok) {
       showToast('Batch gaji '+res.id+' berhasil diajukan','ti-calendar-month');
       closeModal();
-      await loadKasbonAll();
+      invalidateKasbonCache(); await loadKasbonTab(kasbonSubTab, true);
     } else { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); }
   } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
   hideLoader();
@@ -3621,7 +3688,7 @@ async function runInitKasbonDB() {
   closeModal(); showLoader('Menginisialisasi database kasbon...');
   try {
     const res = await apiPost({action:'initKasbonDB'});
-    if (res.ok) { showToast('Database Kasbon berhasil diinisialisasi','ti-database'); await loadKasbonAll(); }
+    if (res.ok) { showToast('Database Kasbon berhasil diinisialisasi','ti-database'); invalidateKasbonCache(); await loadKasbonTab(kasbonSubTab, true); }
     else showToast('Gagal: '+res.error,'ti-alert-triangle');
   } catch(e) { showToast('Error koneksi','ti-alert-triangle'); }
   hideLoader();
