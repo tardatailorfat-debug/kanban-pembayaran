@@ -706,12 +706,12 @@ select.fld option{background:var(--bg2)}
 const API = 'https://script.google.com/macros/s/AKfycbxb0bUxkWGda81Y9Aq0L9oxjmX9nMr-x90Gxrf9eU40FBEZSaTnoQ9XuwcdPtqxz0ZbTA/exec';
 
 const PASSWORDS = {
-  owner:             'useradmin123',
-  finance:           'superman123',
-  releaser:          'bosziyad123',
-  divisi_produksi:   'hahahihi',
-  sales:             'pritha123',
-  divisi_marketing:  'marketing1473',
+  owner:             'owner123',
+  finance:           'finance123',
+  releaser:          'releaser123',
+  divisi_produksi:   'produksi123',
+  sales:             'sales123',
+  divisi_marketing:  'marketing123',
   umum:              'tardaumum123',
   kepala_produksi:   'hanyapakoen999',
   rumah_tangga_produksi: 'madrid123',
@@ -4116,7 +4116,7 @@ async function submitEditSaldo(dompetId) {
   const ket   = document.getElementById('pcs-ket')?.value.trim();
   showLoader('Menyimpan penyesuaian...');
   try {
-    const res = await apiPost({action:'editSaldoPC', pcId, saldoBaru:saldo, keterangan:ket});
+    const res = await apiPost({action:'editSaldoPC', pcId:dompetId, saldoBaru:saldo, keterangan:ket});
     if (res.ok) {
       showToast('Saldo diperbarui','ti-check');
       closeModal();
