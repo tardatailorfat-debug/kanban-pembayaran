@@ -4656,7 +4656,11 @@ async function loadReimburs() {
     // Tampilkan tab "Semua" hanya untuk Finance/Owner/Releaser
     const tabAll = document.getElementById('rsub-all');
     if (tabAll) tabAll.style.display = isReimbAdmin() ? 'flex' : 'none';
-    if (isReimbAdmin()) reimbSubTab = 'all';
+    // Default tab: Admin buka "Semua Pengajuan", karyawan buka "Pengajuan Saya"
+    if (isReimbAdmin() && reimbSubTab === 'mine') reimbSubTab = 'all';
+    // Sync tab active state
+    document.getElementById('rsub-mine')?.classList.toggle('active', reimbSubTab==='mine');
+    document.getElementById('rsub-all')?.classList.toggle('active', reimbSubTab==='all');
 
   } catch(e) { showToast('Gagal memuat reimburs','ti-alert-triangle'); }
   renderReimbBody();
@@ -4670,24 +4674,172 @@ function switchReimbTab(tab) {
   renderReimbBody();
 }
 
+// ─── Kanban columns definition ───────────────────────────────
+const REIMB_KANBAN_COLS = [
+  {
+    id: 'diajukan',
+    label: 'Diajukan',
+    icon: 'ti-file-text',
+    statuses: ['SUBMITTED','AI_REVIEWED'],
+    bg: 'var(--blue-bg)', fg: 'var(--blue)',
+  },
+  {
+    id: 'review',
+    label: 'Sedang Review',
+    icon: 'ti-eye',
+    statuses: ['WAITING_APPROVAL','WAITING_DIRECTOR'],
+    bg: 'var(--orange-bg)', fg: 'var(--orange)',
+  },
+  {
+    id: 'disetujui',
+    label: 'Disetujui',
+    icon: 'ti-circle-check',
+    statuses: ['APPROVED'],
+    bg: '#E8F5E9', fg: '#2E7D32',
+  },
+  {
+    id: 'pencairan',
+    label: 'Menunggu Pencairan',
+    icon: 'ti-cash',
+    statuses: ['MAKER','READY_PAYMENT'],
+    bg: 'var(--purple-bg)', fg: 'var(--purple)',
+  },
+  {
+    id: 'selesai',
+    label: 'Selesai',
+    icon: 'ti-check',
+    statuses: ['PAID'],
+    bg: 'var(--bg3)', fg: 'var(--txt2)',
+  },
+];
+
 function renderReimbBody() {
   const body = document.getElementById('reimburs-body');
   if (!body) return;
 
+  const myId    = currentUser?.name || '';
+  const isAdmin = isReimbAdmin();
+
+  // Filter sesuai tab
   const filtered = reimbSubTab === 'mine'
-    ? reimbList.filter(r => r.userId === (currentUser?.name||''))
+    ? reimbList.filter(r => r.userId === myId)
     : reimbList;
 
-  if (filtered.length === 0) {
+  if (isAdmin && reimbSubTab === 'all') {
+    // Finance/Owner/Releaser: tampilan LIST dengan grouping per status
+    renderReimbList(body, filtered);
+  } else {
+    // Karyawan (atau Finance lihat milik sendiri): tampilan KANBAN
+    renderReimbKanban(body, filtered);
+  }
+}
+
+// ─── Tampilan Kanban (untuk karyawan) ────────────────────────
+function renderReimbKanban(body, list) {
+  const rejected = list.filter(r => ['RETURNED','REJECTED'].includes(r.status));
+  const active   = list.filter(r => !['RETURNED','REJECTED'].includes(r.status));
+
+  if (list.length === 0) {
     body.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--txt3)">
       <i class="ti ti-receipt-off" style="font-size:48px;opacity:.3;display:block;margin-bottom:12px"></i>
       <div style="font-size:14px;font-weight:600">Belum ada pengajuan reimburs</div>
-      <div style="font-size:12px;margin-top:6px">Klik "Ajukan Reimburs" untuk membuat pengajuan baru</div>
+      <div style="font-size:12px;margin-top:6px">Klik "+ Ajukan Reimburs" untuk membuat pengajuan baru</div>
     </div>`;
     return;
   }
 
-  body.innerHTML = filtered.map(r => renderReimbCard(r)).join('');
+  body.innerHTML = `
+    <!-- Board kanban -->
+    <div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:8px;min-height:280px">
+      ${REIMB_KANBAN_COLS.map(col => {
+        const cards = active.filter(r => col.statuses.includes(r.status));
+        return `
+        <div style="flex:0 0 220px;display:flex;flex-direction:column;background:var(--bg3);border-radius:14px;overflow:hidden;min-height:200px">
+          <div style="padding:12px 12px 6px;display:flex;align-items:center;gap:7px">
+            <div style="width:26px;height:26px;border-radius:7px;background:${col.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ${col.icon}" style="font-size:13px;color:${col.fg}"></i>
+            </div>
+            <span style="font-size:11.5px;font-weight:800;color:var(--txt);text-transform:uppercase;letter-spacing:.03em;flex:1">${col.label}</span>
+            <span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:12px;background:var(--bg2);color:var(--txt2)">${cards.length}</span>
+          </div>
+          <div style="flex:1;padding:6px 8px;display:flex;flex-direction:column;gap:8px;overflow-y:auto">
+            ${cards.length === 0
+              ? `<div style="text-align:center;padding:20px 8px;font-size:11.5px;color:var(--txt3)">—</div>`
+              : cards.map(r => renderReimbKanbanCard(r, col)).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    ${rejected.length > 0 ? `
+    <!-- Dikembalikan / Ditolak -->
+    <div style="margin-top:20px">
+      <div style="font-size:11px;font-weight:800;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">
+        Dikembalikan / Ditolak (${rejected.length})
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${rejected.map(r => renderReimbCard(r)).join('')}
+      </div>
+    </div>` : ''}
+  `;
+}
+
+function renderReimbKanbanCard(r, col) {
+  const tgl = r.tanggal
+    ? new Date(r.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'short'})
+    : '-';
+  const riskColor = r.aiRiskLevel==='Tinggi'?'var(--red)':r.aiRiskLevel==='Sedang'?'var(--orange)':'var(--green)';
+
+  return `
+  <div onclick="openReimbDetail('${r.id}')"
+    style="background:var(--bg2);border-radius:10px;padding:11px 12px;cursor:pointer;
+      border:1.5px solid var(--bdr);transition:border-color .15s,box-shadow .15s"
+    onmouseover="this.style.borderColor='var(--blue)';this.style.boxShadow='0 3px 12px rgba(47,111,237,.1)'"
+    onmouseout="this.style.borderColor='var(--bdr)';this.style.boxShadow='none'">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span style="font-size:10.5px;color:var(--txt3);font-family:var(--mono)">${r.id}</span>
+      ${r.aiRiskLevel && r.aiRiskLevel!=='Rendah' ? `
+        <span style="width:7px;height:7px;border-radius:50%;background:${riskColor};display:inline-block" title="Risk: ${r.aiRiskLevel}"></span>
+      ` : ''}
+    </div>
+    <div style="font-size:14px;font-weight:800;font-family:var(--mono);color:var(--txt);margin-bottom:4px">${fmt(r.nominal)}</div>
+    <div style="font-size:11.5px;color:var(--txt2);font-weight:500;margin-bottom:8px;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.keterangan||'-')}</div>
+    <div style="font-size:10.5px;color:var(--txt3)">
+      <i class="ti ti-calendar" style="font-size:10px"></i> ${tgl}
+    </div>
+  </div>`;
+}
+
+// ─── Tampilan List (untuk Finance/Owner) ─────────────────────
+function renderReimbList(body, list) {
+  if (list.length === 0) {
+    body.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--txt3)">
+      <i class="ti ti-receipt-off" style="font-size:48px;opacity:.3;display:block;margin-bottom:12px"></i>
+      <div style="font-size:14px;font-weight:600">Belum ada pengajuan reimburs</div>
+    </div>`;
+    return;
+  }
+
+  // Group berdasarkan status yang butuh action dulu
+  const needAction = list.filter(r => ['AI_REVIEWED','WAITING_APPROVAL','WAITING_DIRECTOR','APPROVED','MAKER','READY_PAYMENT'].includes(r.status));
+  const done       = list.filter(r => ['PAID','RETURNED','REJECTED','SUBMITTED'].includes(r.status));
+
+  body.innerHTML = `
+    ${needAction.length > 0 ? `
+    <div style="font-size:11px;font-weight:800;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">
+      Perlu Tindakan (${needAction.length})
+    </div>
+    ${needAction.map(r => renderReimbCard(r)).join('')}
+    ` : ''}
+
+    ${done.length > 0 ? `
+    <div style="font-size:11px;font-weight:800;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-top:20px;margin-bottom:10px">
+      Selesai / Arsip (${done.length})
+    </div>
+    ${done.map(r => renderReimbCard(r)).join('')}
+    ` : ''}
+  `;
 }
 
 function renderReimbCard(r) {
