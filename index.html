@@ -344,6 +344,27 @@ select.fld option{background:var(--bg2)}
 .prog-bar-wrap{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden}
 .prog-bar{height:100%;border-radius:3px;transition:width .5s ease}
 
+/* REIMBURS */
+.reimb-card{background:var(--bg2);border:1.5px solid var(--bdr);border-radius:14px;padding:16px 18px;margin-bottom:12px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.reimb-card:hover{border-color:var(--blue);box-shadow:0 4px 16px rgba(47,111,237,.1)}
+.reimb-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.reimb-status{font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em}
+.reimb-nominal{font-size:20px;font-weight:800;font-family:var(--mono);color:var(--txt);margin-bottom:4px}
+.reimb-ket{font-size:13px;color:var(--txt2);font-weight:500;margin-bottom:10px}
+.reimb-meta{display:flex;align-items:center;gap:12px;font-size:11.5px;color:var(--txt3);flex-wrap:wrap}
+.risk-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px}
+.risk-dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+/* Status colors */
+.status-SUBMITTED{background:var(--blue-bg);color:var(--blue)}
+.status-AI_REVIEWED{background:#E8F5E9;color:#2E7D32}
+.status-WAITING_APPROVAL{background:var(--orange-bg);color:var(--orange)}
+.status-WAITING_DIRECTOR{background:var(--purple-bg);color:var(--purple)}
+.status-MAKER{background:var(--blue-bg);color:var(--blue)}
+.status-READY_PAYMENT{background:#E8F5E9;color:#2E7D32}
+.status-PAID{background:var(--bg3);color:var(--txt2)}
+.status-RETURNED{background:var(--red-bg);color:var(--red)}
+.status-REJECTED{background:var(--red-bg);color:var(--red)}
+
 /* PETTY CASH */
 .pc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:20px}
 .pc-card{background:var(--bg2);border:1.5px solid var(--bdr);border-radius:14px;padding:16px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
@@ -621,6 +642,9 @@ select.fld option{background:var(--bg2)}
       <button class="sidebar-item" id="tab-pettycash" onclick="switchMenu('pettycash')" style="display:none">
         <i class="ti ti-wallet" style="font-size:14px"></i> Petty Cash
       </button>
+      <button class="sidebar-item" id="tab-reimburs" onclick="switchMenu('reimburs')" style="display:none">
+        <i class="ti ti-receipt-refund" style="font-size:14px"></i> Reimburs
+      </button>
     </div>
 
     <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;min-width:0">
@@ -668,7 +692,21 @@ select.fld option{background:var(--bg2)}
         <div id="kasbon-body" class="kasbon-body-watermark" style="flex:1;overflow-y:auto;padding:14px;position:relative"></div>
       </div>
 
-      <!-- ═══ KONTEN: PETTY CASH ═══ -->
+      <!-- ═══ KONTEN: REIMBURS ═══ -->
+      <div id="menu-content-reimburs" style="display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0">
+        <div class="menu-tabs" id="reimburs-sub-tabs">
+          <button class="menu-tab active" onclick="switchReimbTab('mine')" id="rsub-mine">
+            <i class="ti ti-file-text" style="font-size:13px"></i> Pengajuan Saya
+          </button>
+          <button class="menu-tab" onclick="switchReimbTab('all')" id="rsub-all" style="display:none">
+            <i class="ti ti-files" style="font-size:13px"></i> Semua Pengajuan
+          </button>
+          <button class="tb-btn" onclick="openReimbForm()" style="margin-left:auto;flex-shrink:0">
+            <i class="ti ti-plus" style="font-size:13px"></i> Ajukan Reimburs
+          </button>
+        </div>
+        <div id="reimburs-body" style="flex:1;overflow-y:auto;padding:20px 24px;min-height:0"></div>
+      </div>
       <div id="menu-content-pettycash" style="display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0">
         <div class="menu-tabs" id="pettycash-sub-tabs">
           <button class="menu-tab active" onclick="switchPCTab('ringkasan')" id="pcsub-ringkasan">
@@ -706,8 +744,8 @@ select.fld option{background:var(--bg2)}
 const API = 'https://script.google.com/macros/s/AKfycbxb0bUxkWGda81Y9Aq0L9oxjmX9nMr-x90Gxrf9eU40FBEZSaTnoQ9XuwcdPtqxz0ZbTA/exec';
 
 const PASSWORDS = {
-  owner:             'useradmin123',
-  finance:           'superman123',
+  owner:             'owner123',
+  finance:           'superman999',
   releaser:          'bosziyad123',
   divisi_produksi:   'hahahihi',
   sales:             'sales123',
@@ -876,6 +914,24 @@ function myPcIds() {
   return PC_PEMEGANG[currentUser?.role] || null; // null = Finance/Owner lihat semua
 }
 
+// ─── State Reimburs ───────────────────────────────────────────
+let reimbList     = [];
+let reimbSubTab   = 'mine'; // 'mine' | 'all'
+let reimbRekening = null;   // rekening tersimpan user ini
+
+// Status labels & colors
+const REIMB_STATUS_LABEL = {
+  'SUBMITTED':        'Diajukan',
+  'AI_REVIEWED':      'Menunggu Approval',
+  'WAITING_APPROVAL': 'Menunggu Approval',
+  'WAITING_DIRECTOR': 'Menunggu Direktur',
+  'MAKER':            'Dalam Proses',
+  'READY_PAYMENT':    'Siap Dibayar',
+  'PAID':             'Selesai',
+  'RETURNED':         'Dikembalikan',
+  'REJECTED':         'Ditolak',
+};
+
 // State petty cash
 let pcDompetList = [];  // master dompet
 let pcTrxList = [];     // transaksi aktif (filtered by dompet)
@@ -1016,6 +1072,7 @@ function enterApp(user) {
   const tabPC = document.getElementById('tab-pettycash');
   const tabKasbon = document.getElementById('tab-kasbon');
   const tabPembayaran = document.getElementById('tab-pembayaran');
+  const tabReimburs = document.getElementById('tab-reimburs');
 
   // Tampilkan menu Petty Cash di sidebar untuk yang punya akses
   if (canAccessPC() && tabPC) tabPC.style.display = 'flex';
@@ -1025,7 +1082,10 @@ function enterApp(user) {
   if (canAccessKasbon() && tabKasbon) tabKasbon.style.display = 'flex';
   else if (tabKasbon) tabKasbon.style.display = 'none';
 
-  const needsSidebar = canAccessKasbon() || canAccessPC();
+  // Tampilkan menu Reimburs — semua user punya akses
+  if (tabReimburs) tabReimburs.style.display = 'flex';
+
+  const needsSidebar = canAccessKasbon() || canAccessPC() || true; // reimburs semua bisa
   if (needsSidebar) {
     sidebarBtn.style.display = 'flex';
   } else {
@@ -2253,13 +2313,18 @@ function closeSidebar() {
 // ════════════════════════════════════════════════════════════
 function switchMenu(menu) {
   currentMenu = menu;
-  ['pembayaran','kasbon','pettycash'].forEach(m => {
+  ['pembayaran','kasbon','pettycash','reimburs'].forEach(m => {
     document.getElementById('tab-'+m)?.classList.toggle('active', m===menu);
     const el = document.getElementById('menu-content-'+m);
     if (el) el.style.display = m===menu ? 'flex' : 'none';
   });
 
-  const titles = {pembayaran:'TARDA Finance Hub', kasbon:'Kasbon & Upah Pekerja', pettycash:'Petty Cash'};
+  const titles = {
+    pembayaran:'TARDA Finance Hub',
+    kasbon:'Kasbon & Upah Pekerja',
+    pettycash:'Petty Cash',
+    reimburs:'Reimbursement'
+  };
   document.getElementById('app-title').textContent = titles[menu] || 'TARDA Finance Hub';
 
   closeSidebar();
@@ -2269,11 +2334,13 @@ function switchMenu(menu) {
   } else if (menu === 'kasbon') {
     const el = document.getElementById('btn-init-kasbon-db');
     if (el) el.style.display = isOwner() ? 'flex' : 'none';
-    loadKasbonAll();
+    loadKasbonTab(kasbonSubTab);
   } else if (menu === 'pettycash') {
     const el = document.getElementById('btn-init-pc-db');
     if (el) el.style.display = isOwner() ? 'flex' : 'none';
     loadPCAll();
+  } else if (menu === 'reimburs') {
+    loadReimburs();
   }
 }
 
@@ -4562,6 +4629,448 @@ async function exportToExcel() {
   }
   hideLoader();
 }
+// ════════════════════════════════════════════════════════════
+//  REIMBURSEMENT — Frontend
+// ════════════════════════════════════════════════════════════
+
+function canApproveReimb() { return isOwner() || can('finance'); }
+function canReleaseReimb() { return currentUser?.role === 'releaser' || isOwner(); }
+function isReimbAdmin()    { return canApproveReimb() || canReleaseReimb(); }
+
+// ─── Load & render ────────────────────────────────────────────
+async function loadReimburs() {
+  showLoader('Memuat data reimburs...');
+  try {
+    // Load rekening tersimpan user ini
+    const rRek = await apiGet({action:'getReimbursRekening', userId:currentUser?.name||''});
+    if (rRek.ok) reimbRekening = rRek.data;
+
+    // Load daftar reimburs
+    const res = await apiGet({
+      action:'getReimburs',
+      userId: currentUser?.name||'',
+      role:   currentUser?.role||''
+    });
+    if (res.ok) reimbList = res.data || [];
+
+    // Tampilkan tab "Semua" hanya untuk Finance/Owner/Releaser
+    const tabAll = document.getElementById('rsub-all');
+    if (tabAll) tabAll.style.display = isReimbAdmin() ? 'flex' : 'none';
+    if (isReimbAdmin()) reimbSubTab = 'all';
+
+  } catch(e) { showToast('Gagal memuat reimburs','ti-alert-triangle'); }
+  renderReimbBody();
+  hideLoader();
+}
+
+function switchReimbTab(tab) {
+  reimbSubTab = tab;
+  document.getElementById('rsub-mine')?.classList.toggle('active', tab==='mine');
+  document.getElementById('rsub-all')?.classList.toggle('active', tab==='all');
+  renderReimbBody();
+}
+
+function renderReimbBody() {
+  const body = document.getElementById('reimburs-body');
+  if (!body) return;
+
+  const filtered = reimbSubTab === 'mine'
+    ? reimbList.filter(r => r.userId === (currentUser?.name||''))
+    : reimbList;
+
+  if (filtered.length === 0) {
+    body.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--txt3)">
+      <i class="ti ti-receipt-off" style="font-size:48px;opacity:.3;display:block;margin-bottom:12px"></i>
+      <div style="font-size:14px;font-weight:600">Belum ada pengajuan reimburs</div>
+      <div style="font-size:12px;margin-top:6px">Klik "Ajukan Reimburs" untuk membuat pengajuan baru</div>
+    </div>`;
+    return;
+  }
+
+  body.innerHTML = filtered.map(r => renderReimbCard(r)).join('');
+}
+
+function renderReimbCard(r) {
+  const statusLabel = REIMB_STATUS_LABEL[r.status] || r.status;
+  const statusClass = 'status-' + r.status;
+  const riskColor   = r.aiRiskLevel==='Tinggi'?'var(--red)':r.aiRiskLevel==='Sedang'?'var(--orange)':'var(--green)';
+  const riskDot     = r.aiRiskLevel==='Tinggi'?'#ef4444':r.aiRiskLevel==='Sedang'?'#f59e0b':'#22c55e';
+  const tgl         = r.tanggal ? new Date(r.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '-';
+
+  return `
+  <div class="reimb-card" onclick="openReimbDetail('${r.id}')">
+    <div class="reimb-card-top">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="reimb-status ${statusClass}">${statusLabel}</span>
+        ${r.aiRiskLevel ? `<span class="risk-badge" style="background:${riskColor}18;color:${riskColor}">
+          <span class="risk-dot" style="background:${riskDot}"></span>${r.aiRiskLevel}
+        </span>` : ''}
+      </div>
+      <span style="font-size:11.5px;color:var(--txt3);font-family:var(--mono)">${r.id}</span>
+    </div>
+    <div class="reimb-nominal">${fmt(r.nominal)}</div>
+    <div class="reimb-ket">${esc(r.keterangan||'-')}</div>
+    <div class="reimb-meta">
+      <span><i class="ti ti-user" style="font-size:11px"></i> ${esc(r.userName||'-')}</span>
+      <span><i class="ti ti-calendar" style="font-size:11px"></i> ${tgl}</span>
+      ${r.aiSummary ? `<span style="color:var(--txt3);font-style:italic">${esc(r.aiSummary)}</span>` : ''}
+    </div>
+  </div>`;
+}
+
+// ─── Detail modal ─────────────────────────────────────────────
+function openReimbDetail(id) {
+  const r = reimbList.find(x=>x.id===id);
+  if (!r) return;
+
+  const statusLabel = REIMB_STATUS_LABEL[r.status] || r.status;
+  const canApprove  = canApproveReimb() && ['AI_REVIEWED','WAITING_APPROVAL'].includes(r.status);
+  const canDirector = canReleaseReimb() && r.status === 'WAITING_DIRECTOR';
+  const canMaker    = canApproveReimb() && r.status === 'APPROVED';
+  const canRelease  = canReleaseReimb() && r.status === 'MAKER';
+  const canReturn   = canApproveReimb() && ['AI_REVIEWED','WAITING_APPROVAL','WAITING_DIRECTOR'].includes(r.status);
+  const canPay      = canApproveReimb() && r.status === 'READY_PAYMENT';
+  const isOwner_    = r.userId === currentUser?.name;
+  const canCancel   = isOwner_ && ['AI_REVIEWED','WAITING_APPROVAL'].includes(r.status);
+  const tgl         = r.tanggal ? new Date(r.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}) : '-';
+  const riskColor   = r.aiRiskLevel==='Tinggi'?'var(--red)':r.aiRiskLevel==='Sedang'?'var(--orange)':'var(--green)';
+
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:560px">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:var(--blue-bg)"><i class="ti ti-receipt" style="font-size:16px;color:var(--blue)"></i></div>
+        <div><h2>${esc(r.keterangan||'Reimburs')}</h2><p>${r.id} · ${statusLabel}</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="info-grid" style="margin-bottom:14px">
+          <span class="k">Pengaju</span><span class="v plain">${esc(r.userName||'-')}</span>
+          <span class="k">Tanggal</span><span class="v plain">${tgl}</span>
+          <span class="k">Nominal</span><span class="v" style="font-size:15px;font-weight:800">${fmt(r.nominal)}</span>
+          <span class="k">Keterangan</span><span class="v plain">${esc(r.keterangan||'-')}</span>
+          ${r.noRekening?`<span class="k">Rekening</span><span class="v">${esc(r.noRekening)} (${esc(r.namaBank||'-')})</span>`:''}
+          ${r.namaTujuan?`<span class="k">A/N</span><span class="v plain">${esc(r.namaTujuan)}</span>`:''}
+        </div>
+
+        ${r.aiRiskLevel ? `
+        <div style="background:${riskColor}12;border:1px solid ${riskColor}40;border-radius:10px;padding:12px 14px;margin-bottom:14px">
+          <div style="font-size:11px;font-weight:800;color:${riskColor};text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">
+            🤖 AI Review — Risiko ${r.aiRiskLevel}
+          </div>
+          ${r.aiSummary?`<div style="font-size:12.5px;color:var(--txt);margin-bottom:6px">${esc(r.aiSummary)}</div>`:''}
+          ${(r.aiFlags||[]).length>0?`<div style="font-size:11.5px;color:${riskColor}">⚠️ ${(r.aiFlags||[]).join(' · ')}</div>`:''}
+        </div>` : ''}
+
+        ${r.history?`
+        <div class="section">
+          <label>Riwayat</label>
+          <div style="font-size:12px;color:var(--txt2);line-height:1.8;white-space:pre-line">${esc(r.history)}</div>
+        </div>`:''}
+      </div>
+
+      <div class="action-area">
+        ${canApprove ? `
+          <button class="btn btn-success" onclick="doReimbAction('${r.id}','approve')">
+            <i class="ti ti-circle-check" style="font-size:14px"></i> Approve
+          </button>` : ''}
+        ${canDirector ? `
+          <button class="btn btn-success" onclick="doReimbAction('${r.id}','director_approve')">
+            <i class="ti ti-circle-check" style="font-size:14px"></i> Approve sebagai Direktur
+          </button>` : ''}
+        ${canMaker ? `
+          <button class="btn btn-primary" onclick="doReimbAction('${r.id}','maker')">
+            <i class="ti ti-send" style="font-size:14px"></i> Buat Maker
+          </button>` : ''}
+        ${canRelease ? `
+          <button class="btn btn-success" onclick="doReimbAction('${r.id}','release')">
+            <i class="ti ti-player-play" style="font-size:14px"></i> Release
+          </button>` : ''}
+        ${canPay ? `
+          <button class="btn btn-success" onclick="openReimbPayModal('${r.id}')">
+            <i class="ti ti-credit-card" style="font-size:14px"></i> Tandai Sudah Dibayar
+          </button>` : ''}
+        ${canReturn ? `
+          <button class="btn btn-danger" onclick="doReimbAction('${r.id}','return')">
+            <i class="ti ti-arrow-back" style="font-size:14px"></i> Kembalikan
+          </button>` : ''}
+        ${canCancel ? `
+          <button class="btn btn-ghost" onclick="doReimbAction('${r.id}','cancel')">
+            Batalkan Pengajuan
+          </button>` : ''}
+        <button class="btn btn-ghost" onclick="closeModal()">Tutup</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── Aksi pada reimburs ───────────────────────────────────────
+async function doReimbAction(id, action) {
+  const r = reimbList.find(x=>x.id===id);
+  if (!r) return;
+
+  let patch = {}, histMsg = '';
+  const nominal = Number(r.nominal)||0;
+
+  if (action === 'approve') {
+    // Cek threshold — kalau >5jt perlu direktur dulu
+    if (nominal > 5000000) {
+      patch   = { status:'WAITING_DIRECTOR' };
+      histMsg = 'Diapprove Manajer Finance — menunggu persetujuan Direktur (nominal >Rp5jt)';
+    } else {
+      patch   = { status:'APPROVED', approvedBy:currentUser?.name||'' };
+      histMsg = 'Diapprove oleh ' + (currentUser?.name||'Finance');
+    }
+  } else if (action === 'director_approve') {
+    patch   = { status:'APPROVED', direktorApprove:currentUser?.name||'' };
+    histMsg = 'Diapprove Direktur oleh ' + (currentUser?.name||'');
+  } else if (action === 'maker') {
+    const mkrId = 'MKR-R-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random()*9000)+1000);
+    patch   = { status:'MAKER', makerId:mkrId };
+    histMsg = 'Maker ' + mkrId + ' dibuat oleh ' + (currentUser?.name||'Finance');
+  } else if (action === 'release') {
+    patch   = { status:'READY_PAYMENT', buktNo:'REL-' + Date.now() };
+    histMsg = 'Di-release oleh ' + (currentUser?.name||'BOD');
+  } else if (action === 'return') {
+    const alasan = prompt('Alasan dikembalikan:');
+    if (!alasan) return;
+    patch   = { status:'RETURNED' };
+    histMsg = 'Dikembalikan — ' + alasan;
+  } else if (action === 'cancel') {
+    if (!confirm('Batalkan pengajuan ini?')) return;
+    patch   = { status:'REJECTED' };
+    histMsg = 'Dibatalkan oleh pengaju';
+  }
+
+  // Optimistic update
+  const idx = reimbList.findIndex(x=>x.id===id);
+  const backup = idx!==-1 ? {...reimbList[idx]} : null;
+  if (idx !== -1) reimbList[idx] = {...reimbList[idx], ...patch};
+  renderReimbBody();
+  closeModal();
+
+  try {
+    const res = await apiPost({
+      action:'updateReimburs', id, patch, histMsg,
+      updatedBy: currentUser?.name||''
+    });
+    if (!res.ok) {
+      if (idx !== -1 && backup) reimbList[idx] = backup;
+      renderReimbBody();
+      showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle');
+    } else {
+      showToast('Status diperbarui','ti-check');
+      // Refresh untuk dapat history terbaru
+      setTimeout(() => loadReimburs(), 1500);
+    }
+  } catch(e) {
+    if (idx !== -1 && backup) reimbList[idx] = backup;
+    renderReimbBody();
+    showToast('Error: '+e,'ti-alert-triangle');
+  }
+}
+
+// ─── Modal tandai sudah dibayar ───────────────────────────────
+function openReimbPayModal(id) {
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:var(--green-bg)"><i class="ti ti-credit-card" style="font-size:16px;color:var(--green)"></i></div>
+        <div><h2>Tandai Sudah Dibayar</h2><p>${id}</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="section"><label>Tanggal Transfer</label>
+          <input type="date" class="fld" id="pay-tanggal" value="${new Date().toISOString().slice(0,10)}">
+        </div>
+        <div class="section"><label>Catatan (opsional)</label>
+          <input type="text" class="fld" id="pay-catatan" placeholder="Misal: Transfer via BCA...">
+        </div>
+        <div class="section"><label>Upload Bukti Transfer</label>
+          <input type="file" class="fld" id="pay-bukti" accept="image/*,application/pdf" style="padding:6px">
+        </div>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-success" onclick="submitReimbPay('${id}')">
+          <i class="ti ti-check" style="font-size:14px"></i> Konfirmasi Pembayaran
+        </button>
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function submitReimbPay(id) {
+  const tgl     = document.getElementById('pay-tanggal')?.value;
+  const catatan = document.getElementById('pay-catatan')?.value.trim();
+  const fileInput = document.getElementById('pay-bukti');
+
+  showLoader('Memproses pembayaran...');
+  try {
+    // Upload bukti kalau ada
+    let driveUrl = '';
+    if (fileInput?.files[0]) {
+      const reader = new FileReader();
+      const b64 = await new Promise(res => {
+        reader.onload = e => res(e.target.result.split(',')[1]);
+        reader.readAsDataURL(fileInput.files[0]);
+      });
+      const upRes = await apiPost({
+        action:'uploadReimbursFile', reimbId:id,
+        fileName:fileInput.files[0].name,
+        mimeType:fileInput.files[0].type||'application/octet-stream',
+        base64:b64, uploadedBy:currentUser?.name||''
+      });
+      if (upRes.ok) driveUrl = upRes.driveUrl;
+    }
+
+    const histMsg = 'Dibayar oleh ' + (currentUser?.name||'Finance') +
+      (tgl?' pada '+tgl:'') + (catatan?' — '+catatan:'') +
+      (driveUrl?' | Bukti: '+driveUrl:'');
+
+    const res = await apiPost({
+      action:'updateReimburs', id,
+      patch:{ status:'PAID' },
+      histMsg, updatedBy:currentUser?.name||''
+    });
+
+    if (res.ok) {
+      showToast('Pembayaran berhasil dicatat','ti-check');
+      closeModal();
+      await loadReimburs();
+    } else showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle');
+  } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
+  hideLoader();
+}
+
+// ─── Form pengajuan baru ──────────────────────────────────────
+async function openReimbForm() {
+  // Load rekening terbaru kalau belum ada
+  if (!reimbRekening) {
+    const r = await apiGet({action:'getReimbursRekening', userId:currentUser?.name||''});
+    if (r.ok) reimbRekening = r.data;
+  }
+
+  const rek = reimbRekening;
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:var(--blue-bg)"><i class="ti ti-receipt-2" style="font-size:16px;color:var(--blue)"></i></div>
+        <div><h2>Ajukan Reimburs</h2><p>Pengajuan penggantian biaya</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="row2 section">
+          <div>
+            <label>Tanggal Transaksi <span style="color:var(--red)">*</span></label>
+            <input type="date" class="fld" id="rb-tanggal" value="${new Date().toISOString().slice(0,10)}">
+          </div>
+          <div>
+            <label>Nominal (Rp) <span style="color:var(--red)">*</span></label>
+            <input type="text" class="fld" id="rb-nominal" placeholder="Contoh: 150.000" inputmode="numeric" oninput="formatNominalInput(this)">
+          </div>
+        </div>
+        <div class="section">
+          <label>Keterangan / Keperluan <span style="color:var(--red)">*</span></label>
+          <textarea class="fld" id="rb-keterangan" placeholder="Jelaskan keperluan pengeluaran ini..." style="min-height:70px"></textarea>
+        </div>
+        <div class="section">
+          <label>Upload Struk / Bukti <span style="color:var(--red)">*</span></label>
+          <input type="file" class="fld" id="rb-bukti" accept="image/*,application/pdf" style="padding:6px">
+          <div style="font-size:11px;color:var(--txt3);margin-top:4px">JPG, PNG, atau PDF maks 10MB</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:10px;padding:14px;border:1.5px solid var(--bdr)">
+          <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">
+            Rekening Tujuan Transfer <span style="color:var(--red)">*</span>
+          </div>
+          ${rek ? `<div style="font-size:12.5px;font-weight:600;color:var(--txt);margin-bottom:8px">
+            ✅ ${esc(rek.noRekening)} (${esc(rek.namaBank||'-')}) — ${esc(rek.namaTujuan||'-')}
+            <button onclick="toggleReimbRekEdit()" class="tb-btn" style="font-size:11px;padding:2px 8px;margin-left:8px">Ubah</button>
+          </div>
+          <div id="rek-edit-wrap" style="display:none">` : '<div id="rek-edit-wrap">'}
+            <div class="row2" style="gap:8px;margin-bottom:6px">
+              <input type="text" class="fld" id="rb-rek-no" placeholder="No. Rekening" value="${esc(rek?.noRekening||'')}">
+              <input type="text" class="fld" id="rb-rek-bank" placeholder="Bank (BCA, Mandiri...)" value="${esc(rek?.namaBank||'')}">
+            </div>
+            <input type="text" class="fld" id="rb-rek-nama" placeholder="Nama pemilik rekening" value="${esc(rek?.namaTujuan||'')}">
+          </div>
+        </div>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-primary" onclick="submitReimbForm()">
+          <i class="ti ti-send" style="font-size:14px"></i> Ajukan Reimburs
+        </button>
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleReimbRekEdit() {
+  const wrap = document.getElementById('rek-edit-wrap');
+  if (wrap) wrap.style.display = wrap.style.display==='none' ? 'block' : 'none';
+}
+
+async function submitReimbForm() {
+  const tanggal    = document.getElementById('rb-tanggal')?.value;
+  const nominal    = Number(String(document.getElementById('rb-nominal')?.value||'').replace(/\D/g,''));
+  const keterangan = document.getElementById('rb-keterangan')?.value.trim();
+  const fileInput  = document.getElementById('rb-bukti');
+
+  if (!tanggal || !nominal || !keterangan) {
+    showToast('Lengkapi semua field wajib','ti-alert-triangle'); return;
+  }
+  if (!fileInput?.files[0]) {
+    showToast('Upload struk/bukti terlebih dahulu','ti-alert-triangle'); return;
+  }
+
+  // Rekening — pakai yang sudah ada atau yang baru diinput
+  const noRekEdit   = document.getElementById('rb-rek-no')?.value.trim();
+  const namaBank    = document.getElementById('rb-rek-bank')?.value.trim();
+  const namaTujuan  = document.getElementById('rb-rek-nama')?.value.trim();
+  const noRekening  = noRekEdit || reimbRekening?.noRekening || '';
+
+  if (!noRekening || !namaTujuan) {
+    showToast('Isi data rekening tujuan','ti-alert-triangle'); return;
+  }
+
+  showLoader('Mengajukan reimburs...');
+  try {
+    // Submit data dulu
+    const res = await apiPost({action:'submitReimburs', data:{
+      userId:    currentUser?.name||'',
+      userName:  currentUser?.name||'',
+      userRole:  currentUser?.role||'',
+      tanggal, nominal, keterangan,
+      noRekening, namaBank, namaTujuan,
+    }});
+
+    if (!res.ok) { showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle'); hideLoader(); return; }
+
+    // Upload struk
+    const reimbId = res.id;
+    const reader  = new FileReader();
+    const b64     = await new Promise(r => {
+      reader.onload = e => r(e.target.result.split(',')[1]);
+      reader.readAsDataURL(fileInput.files[0]);
+    });
+    await apiPost({
+      action:'uploadReimbursFile', reimbId,
+      fileName:fileInput.files[0].name,
+      mimeType:fileInput.files[0].type||'application/octet-stream',
+      base64:b64, uploadedBy:currentUser?.name||''
+    });
+
+    showToast('Reimburs '+reimbId+' berhasil diajukan — AI sedang review','ti-check');
+    closeModal();
+    // Refresh setelah beberapa detik (beri waktu AI review)
+    setTimeout(() => loadReimburs(), 3000);
+  } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
+  hideLoader();
+}
+
 </script>
 </body>
 </html>
