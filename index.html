@@ -701,9 +701,14 @@ select.fld option{background:var(--bg2)}
           <button class="menu-tab" onclick="switchReimbTab('all')" id="rsub-all" style="display:none">
             <i class="ti ti-files" style="font-size:13px"></i> Semua Pengajuan
           </button>
-          <button class="tb-btn" onclick="openReimbForm()" style="margin-left:auto;flex-shrink:0">
-            <i class="ti ti-plus" style="font-size:13px"></i> Ajukan Reimburs
-          </button>
+          <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+            <button class="tb-btn" id="btn-reimb-export" onclick="openReimbExportModal()" style="display:none;font-size:12px">
+              <i class="ti ti-file-spreadsheet" style="font-size:13px"></i> Export
+            </button>
+            <button class="tb-btn" onclick="openReimbForm()" style="flex-shrink:0">
+              <i class="ti ti-plus" style="font-size:13px"></i> Ajukan Reimburs
+            </button>
+          </div>
         </div>
         <div id="reimburs-body" style="flex:1;overflow-y:auto;padding:20px 24px;min-height:0"></div>
       </div>
@@ -963,6 +968,13 @@ window.addEventListener('DOMContentLoaded', () => {
   if (saved && saved.role && saved.name && PASSWORDS[saved.role]) {
     currentUser = saved;
     enterApp(saved);
+  } else {
+    // Autofill role terakhir di login form
+    const lastRole = localStorage.getItem('kp_last_role');
+    if (lastRole) {
+      const sel = document.getElementById('ls-role');
+      if (sel) sel.value = lastRole;
+    }
   }
 });
 
@@ -1122,6 +1134,7 @@ function doLogin() {
   if (pass !== PASSWORDS[role]) { errEl.textContent = 'Password salah.'; return; }
   currentUser = {role, name};
   saveSession(currentUser);
+  localStorage.setItem('kp_last_role', role); // simpan untuk autofill berikutnya
   enterApp(currentUser);
 }
 
@@ -3767,6 +3780,19 @@ function getMyPCDompet() {
   return pcDompetList.filter(d => myIds.includes(d.id));
 }
 
+async function applyPCDateFilter() {
+  pcDateFrom = document.getElementById('pc-log-from')?.value || '';
+  pcDateTo   = document.getElementById('pc-log-to')?.value || '';
+  await loadPCTrx(pcActiveDompetId);
+  renderPCBody();
+}
+
+async function clearPCDateFilter() {
+  pcDateFrom = ''; pcDateTo = '';
+  await loadPCTrx(pcActiveDompetId);
+  renderPCBody();
+}
+
 async function loadPCAll() {
   showLoader('Memuat data petty cash...');
   try {
@@ -3944,17 +3970,25 @@ function renderPCLog() {
   const trxAktif = pcTrxList.filter(t=>t.pcId===active.id);
 
   return `
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
       ${myDompet.map(d=>`
-        <button class="pc-dompet-tab ${d.id===active.id?'active':''}" data-id="${d.id}"
+        <button onclick="selectPCDompet('${d.id}')"
           style="padding:6px 12px;border-radius:9px;border:2px solid ${d.id===active.id?'var(--blue)':'var(--bdr)'};
           background:${d.id===active.id?'var(--blue-bg)':'var(--bg2)'};color:${d.id===active.id?'var(--blue)':'var(--txt2)'};
-          font-family:var(--font);font-size:12.5px;font-weight:700;cursor:pointer">
+          font-family:var(--font);font-size:12.5px;font-weight:700;cursor:pointer;transition:all .15s">
           ${esc(d.nama.replace('Petty Cash ',''))}
         </button>`).join('')}
-      <button class="btn btn-ghost" onclick="exportPCTrxCSV()" style="margin-left:auto;font-size:12px;padding:6px 12px">
-        <i class="ti ti-file-spreadsheet" style="font-size:13px"></i> Export CSV
-      </button>
+      <div style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <input type="date" class="search-select" id="pc-log-from" value="${pcDateFrom||''}"
+          onchange="applyPCDateFilter()" placeholder="Dari" style="font-size:12px;padding:5px 8px">
+        <span style="font-size:12px;color:var(--txt3)">—</span>
+        <input type="date" class="search-select" id="pc-log-to" value="${pcDateTo||''}"
+          onchange="applyPCDateFilter()" placeholder="Sampai" style="font-size:12px;padding:5px 8px">
+        ${pcDateFrom||pcDateTo?`<button class="tb-btn" onclick="clearPCDateFilter()" style="font-size:11px;padding:4px 8px">✕</button>`:''}
+        <button class="btn btn-ghost" onclick="exportPCTrxCSV()" style="font-size:12px;padding:6px 12px">
+          <i class="ti ti-file-spreadsheet" style="font-size:13px"></i> Export CSV
+        </button>
+      </div>
     </div>
 
     <div class="ktable-wrap">
@@ -4656,6 +4690,9 @@ async function loadReimburs() {
     // Tampilkan tab "Semua" hanya untuk Finance/Owner/Releaser
     const tabAll = document.getElementById('rsub-all');
     if (tabAll) tabAll.style.display = isReimbAdmin() ? 'flex' : 'none';
+    // Tampilkan tombol export hanya untuk admin
+    const btnExport = document.getElementById('btn-reimb-export');
+    if (btnExport) btnExport.style.display = isReimbAdmin() ? 'flex' : 'none';
     // Default tab: Admin buka "Semua Pengajuan", karyawan buka "Pengajuan Saya"
     if (isReimbAdmin() && reimbSubTab === 'mine') reimbSubTab = 'all';
     // Sync tab active state
@@ -4821,11 +4858,35 @@ function renderReimbList(body, list) {
     return;
   }
 
+  // Hitung summary
+  const totalPending  = list.filter(r => ['AI_REVIEWED','WAITING_APPROVAL','WAITING_DIRECTOR'].includes(r.status));
+  const totalProses   = list.filter(r => ['APPROVED','MAKER'].includes(r.status));
+  const totalSelesai  = list.filter(r => r.status === 'PAID');
+  const nominalPending = totalPending.reduce((s,r)=>s+(Number(r.nominal)||0),0);
+  const nominalProses  = totalProses.reduce((s,r)=>s+(Number(r.nominal)||0),0);
+  const nominalSelesai = totalSelesai.reduce((s,r)=>s+(Number(r.nominal)||0),0);
+
   // Group berdasarkan status yang butuh action dulu
   const needAction = list.filter(r => ['AI_REVIEWED','WAITING_APPROVAL','WAITING_DIRECTOR','APPROVED','MAKER','READY_PAYMENT'].includes(r.status));
   const done       = list.filter(r => ['PAID','RETURNED','REJECTED','SUBMITTED'].includes(r.status));
 
   body.innerHTML = `
+    <!-- Summary stats -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+      <div style="background:var(--orange-bg);border-radius:12px;padding:14px 16px;border:1.5px solid var(--bdr)">
+        <div style="font-size:10.5px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Perlu Review</div>
+        <div style="font-size:18px;font-weight:800;font-family:var(--mono);color:var(--txt)">${totalPending.length} <span style="font-size:12px;color:var(--txt2)">(${fmt(nominalPending)})</span></div>
+      </div>
+      <div style="background:var(--purple-bg);border-radius:12px;padding:14px 16px;border:1.5px solid var(--bdr)">
+        <div style="font-size:10.5px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Dalam Proses</div>
+        <div style="font-size:18px;font-weight:800;font-family:var(--mono);color:var(--txt)">${totalProses.length} <span style="font-size:12px;color:var(--txt2)">(${fmt(nominalProses)})</span></div>
+      </div>
+      <div style="background:var(--green-bg);border-radius:12px;padding:14px 16px;border:1.5px solid var(--bdr)">
+        <div style="font-size:10.5px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Selesai Dibayar</div>
+        <div style="font-size:18px;font-weight:800;font-family:var(--mono);color:var(--txt)">${totalSelesai.length} <span style="font-size:12px;color:var(--txt2)">(${fmt(nominalSelesai)})</span></div>
+      </div>
+    </div>
+
     ${needAction.length > 0 ? `
     <div style="font-size:11px;font-weight:800;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">
       Perlu Tindakan (${needAction.length})
@@ -4868,6 +4929,77 @@ function renderReimbCard(r) {
       ${r.aiSummary ? `<span style="color:var(--txt3);font-style:italic">${esc(r.aiSummary)}</span>` : ''}
     </div>
   </div>`;
+}
+
+// ─── Export Reimburs ─────────────────────────────────────────
+function openReimbExportModal() {
+  const now   = new Date();
+  const y     = now.getFullYear();
+  const m     = String(now.getMonth()+1).padStart(2,'0');
+  const from  = y+'-'+m+'-01';
+  const to    = new Date(y, now.getMonth()+1, 0).toISOString().slice(0,10);
+
+  document.getElementById('modal-area').innerHTML = `
+  <div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-hdr">
+        <div class="m-icon" style="background:var(--blue-bg)"><i class="ti ti-file-spreadsheet" style="font-size:16px;color:var(--blue)"></i></div>
+        <div><h2>Export Reimburs</h2><p>Download rekap CSV</p></div>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="row2 section">
+          <div><label>Dari Tanggal</label><input type="date" class="fld" id="rex-from" value="${from}"></div>
+          <div><label>Sampai Tanggal</label><input type="date" class="fld" id="rex-to" value="${to}"></div>
+        </div>
+        <div class="section">
+          <label>Filter Status (opsional)</label>
+          <select class="fld" id="rex-status">
+            <option value="">Semua Status</option>
+            <option value="PAID">Selesai Dibayar</option>
+            <option value="APPROVED">Disetujui</option>
+            <option value="WAITING_APPROVAL">Menunggu Approval</option>
+            <option value="RETURNED">Dikembalikan</option>
+            <option value="REJECTED">Ditolak</option>
+          </select>
+        </div>
+      </div>
+      <div class="action-area">
+        <button class="btn btn-primary" onclick="exportReimbursCSV()">
+          <i class="ti ti-download" style="font-size:14px"></i> Download CSV
+        </button>
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function exportReimbursCSV() {
+  const dateFrom = document.getElementById('rex-from')?.value || '';
+  const dateTo   = document.getElementById('rex-to')?.value || '';
+  const status   = document.getElementById('rex-status')?.value || '';
+
+  showLoader('Menyiapkan export...');
+  try {
+    const res = await apiGet({action:'exportReimburs', dateFrom, dateTo, status});
+    if (!res.ok || !res.csv) {
+      showToast('Tidak ada data untuk diexport','ti-alert-triangle');
+      hideLoader(); return;
+    }
+    const blob = new Blob(['\uFEFF'+res.csv], {type:'text/csv;charset=utf-8;'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const tgl  = dateFrom && dateTo ? dateFrom+'_'+dateTo : new Date().toISOString().slice(0,10);
+    a.href     = url;
+    a.download = 'Reimburs_'+tgl+'.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Export berhasil — '+res.total+' data','ti-file-spreadsheet');
+    closeModal();
+  } catch(e) { showToast('Gagal export: '+e,'ti-alert-triangle'); }
+  hideLoader();
 }
 
 // ─── Load file struk reimburs ────────────────────────────────
