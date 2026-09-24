@@ -4909,7 +4909,7 @@ function openReimbDetail(id) {
   const canMaker    = canApproveReimb() && r.status === 'APPROVED';
   const canRelease  = canReleaseReimb() && r.status === 'MAKER';
   const canReturn   = canApproveReimb() && ['AI_REVIEWED','WAITING_APPROVAL','WAITING_DIRECTOR'].includes(r.status);
-  const canPay      = canApproveReimb() && r.status === 'READY_PAYMENT';
+  const canUploadBukti = canApproveReimb() && r.status === 'PAID' && !r.buktNo;
   const isOwner_    = r.userId === currentUser?.name;
   const canCancel   = isOwner_ && ['AI_REVIEWED','WAITING_APPROVAL'].includes(r.status);
   const tgl         = r.tanggal ? new Date(r.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}) : '-';
@@ -4974,11 +4974,11 @@ function openReimbDetail(id) {
           </button>` : ''}
         ${canRelease ? `
           <button class="btn btn-success" onclick="doReimbAction('${r.id}','release')">
-            <i class="ti ti-player-play" style="font-size:14px"></i> Release
+            <i class="ti ti-player-play" style="font-size:14px"></i> Cairkan & Selesai
           </button>` : ''}
-        ${canPay ? `
-          <button class="btn btn-success" onclick="openReimbPayModal('${r.id}')">
-            <i class="ti ti-credit-card" style="font-size:14px"></i> Tandai Sudah Dibayar
+        ${canUploadBukti ? `
+          <button class="btn btn-ghost" onclick="openReimbPayModal('${r.id}')">
+            <i class="ti ti-upload" style="font-size:14px"></i> Upload Bukti Transfer
           </button>` : ''}
         ${canReturn ? `
           <button class="btn btn-danger" onclick="doReimbAction('${r.id}','return')">
@@ -5019,8 +5019,9 @@ async function doReimbAction(id, action) {
     patch   = { status:'MAKER', makerId:mkrId };
     histMsg = 'Maker ' + mkrId + ' dibuat oleh ' + (currentUser?.name||'Finance');
   } else if (action === 'release') {
-    patch   = { status:'READY_PAYMENT', buktNo:'REL-' + Date.now() };
-    histMsg = 'Di-release oleh ' + (currentUser?.name||'BOD');
+    if (!confirm('Konfirmasi: reimburs ini sudah dieksekusi/dibayar?')) return;
+    patch   = { status:'PAID' };
+    histMsg = 'Dicairkan dan ditandai PAID oleh ' + (currentUser?.name||'BOD') + ' — bukti transfer menyusul';
   } else if (action === 'return') {
     const alasan = prompt('Alasan dikembalikan:');
     if (!alasan) return;
@@ -5066,24 +5067,21 @@ function openReimbPayModal(id) {
   <div class="overlay" onclick="if(event.target===this)closeModal()">
     <div class="modal" style="max-width:400px">
       <div class="modal-hdr">
-        <div class="m-icon" style="background:var(--green-bg)"><i class="ti ti-credit-card" style="font-size:16px;color:var(--green)"></i></div>
-        <div><h2>Tandai Sudah Dibayar</h2><p>${id}</p></div>
+        <div class="m-icon" style="background:var(--blue-bg)"><i class="ti ti-upload" style="font-size:16px;color:var(--blue)"></i></div>
+        <div><h2>Upload Bukti Transfer</h2><p>${id}</p></div>
         <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
       </div>
       <div class="modal-body">
-        <div class="section"><label>Tanggal Transfer</label>
-          <input type="date" class="fld" id="pay-tanggal" value="${new Date().toISOString().slice(0,10)}">
-        </div>
         <div class="section"><label>Catatan (opsional)</label>
-          <input type="text" class="fld" id="pay-catatan" placeholder="Misal: Transfer via BCA...">
+          <input type="text" class="fld" id="pay-catatan" placeholder="Misal: Transfer BCA 24 Sep 2026...">
         </div>
         <div class="section"><label>Upload Bukti Transfer</label>
           <input type="file" class="fld" id="pay-bukti" accept="image/*,application/pdf" style="padding:6px">
         </div>
       </div>
       <div class="action-area">
-        <button class="btn btn-success" onclick="submitReimbPay('${id}')">
-          <i class="ti ti-check" style="font-size:14px"></i> Konfirmasi Pembayaran
+        <button class="btn btn-primary" onclick="submitReimbBukti('${id}')">
+          <i class="ti ti-upload" style="font-size:14px"></i> Upload Bukti
         </button>
         <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
       </div>
@@ -5091,45 +5089,39 @@ function openReimbPayModal(id) {
   </div>`;
 }
 
-async function submitReimbPay(id) {
-  const tgl     = document.getElementById('pay-tanggal')?.value;
-  const catatan = document.getElementById('pay-catatan')?.value.trim();
+async function submitReimbBukti(id) {
+  const catatan   = document.getElementById('pay-catatan')?.value.trim();
   const fileInput = document.getElementById('pay-bukti');
+  if (!fileInput?.files[0]) { showToast('Pilih file bukti transfer','ti-alert-triangle'); return; }
 
-  showLoader('Memproses pembayaran...');
+  showLoader('Mengupload bukti...');
   try {
-    // Upload bukti kalau ada
-    let driveUrl = '';
-    if (fileInput?.files[0]) {
-      const reader = new FileReader();
-      const b64 = await new Promise(res => {
-        reader.onload = e => res(e.target.result.split(',')[1]);
-        reader.readAsDataURL(fileInput.files[0]);
-      });
-      const upRes = await apiPost({
-        action:'uploadReimbursFile', reimbId:id,
-        fileName:fileInput.files[0].name,
-        mimeType:fileInput.files[0].type||'application/octet-stream',
-        base64:b64, uploadedBy:currentUser?.name||''
-      });
-      if (upRes.ok) driveUrl = upRes.driveUrl;
-    }
-
-    const histMsg = 'Dibayar oleh ' + (currentUser?.name||'Finance') +
-      (tgl?' pada '+tgl:'') + (catatan?' — '+catatan:'') +
-      (driveUrl?' | Bukti: '+driveUrl:'');
-
-    const res = await apiPost({
-      action:'updateReimburs', id,
-      patch:{ status:'PAID' },
-      histMsg, updatedBy:currentUser?.name||''
+    const reader = new FileReader();
+    const b64    = await new Promise(res => {
+      reader.onload = e => res(e.target.result.split(',')[1]);
+      reader.readAsDataURL(fileInput.files[0]);
+    });
+    const upRes = await apiPost({
+      action:'uploadReimbursFile', reimbId:id,
+      fileName:fileInput.files[0].name,
+      mimeType:fileInput.files[0].type||'application/octet-stream',
+      base64:b64, uploadedBy:currentUser?.name||''
     });
 
-    if (res.ok) {
-      showToast('Pembayaran berhasil dicatat','ti-check');
+    if (upRes.ok) {
+      // Update history dengan info bukti
+      if (catatan) {
+        await apiPost({
+          action:'updateReimburs', id,
+          patch:{ buktNo: upRes.fileId },
+          histMsg:'Bukti transfer diupload oleh '+(currentUser?.name||'Finance')+(catatan?' — '+catatan:''),
+          updatedBy: currentUser?.name||''
+        });
+      }
+      showToast('Bukti transfer berhasil diupload','ti-check');
       closeModal();
       await loadReimburs();
-    } else showToast('Gagal: '+(res.error||'?'),'ti-alert-triangle');
+    } else showToast('Gagal upload: '+(upRes.error||'?'),'ti-alert-triangle');
   } catch(e) { showToast('Error: '+e,'ti-alert-triangle'); }
   hideLoader();
 }
