@@ -744,7 +744,7 @@ select.fld option{background:var(--bg2)}
 const API = 'https://script.google.com/macros/s/AKfycbxb0bUxkWGda81Y9Aq0L9oxjmX9nMr-x90Gxrf9eU40FBEZSaTnoQ9XuwcdPtqxz0ZbTA/exec';
 
 const PASSWORDS = {
-  owner:             'owner123',
+  owner:             'useradmin123',
   finance:           'superman999',
   releaser:          'bosziyad123',
   divisi_produksi:   'hahahihi',
@@ -4718,6 +4718,34 @@ function renderReimbCard(r) {
   </div>`;
 }
 
+// ─── Load file struk reimburs ────────────────────────────────
+async function loadReimbFiles(reimbId) {
+  const wrap = document.getElementById('reimb-files-'+reimbId);
+  if (!wrap) return;
+  wrap.innerHTML = '<span style="color:var(--txt3);font-size:12px">Memuat...</span>';
+  try {
+    const res = await apiGet({action:'getReimbursFiles', reimbId});
+    const files = res.ok ? res.data : [];
+    if (files.length === 0) {
+      wrap.innerHTML = '<span style="color:var(--txt3);font-size:12px">Tidak ada file terlampir.</span>';
+      return;
+    }
+    wrap.innerHTML = files.map(f => `
+      <a href="${f.driveUrl}" target="_blank" rel="noopener"
+        style="display:inline-flex;align-items:center;gap:6px;padding:7px 12px;
+          background:var(--bg3);border:1.5px solid var(--bdr);border-radius:8px;
+          font-size:12px;font-weight:600;color:var(--blue);text-decoration:none;
+          margin-right:6px;margin-bottom:6px;transition:border-color .15s"
+        onmouseover="this.style.borderColor='var(--blue)'"
+        onmouseout="this.style.borderColor='var(--bdr)'">
+        <i class="ti ti-${f.mimeType?.includes('pdf')?'file-type-pdf':'photo'}" style="font-size:13px"></i>
+        ${esc(f.fileName||'Lihat File')}
+      </a>`).join('');
+  } catch(e) {
+    wrap.innerHTML = '<span style="color:var(--red);font-size:12px">Gagal memuat file.</span>';
+  }
+}
+
 // ─── Detail modal ─────────────────────────────────────────────
 function openReimbDetail(id) {
   const r = reimbList.find(x=>x.id===id);
@@ -4767,6 +4795,16 @@ function openReimbDetail(id) {
           <label>Riwayat</label>
           <div style="font-size:12px;color:var(--txt2);line-height:1.8;white-space:pre-line">${esc(r.history)}</div>
         </div>`:''}
+
+        <!-- Lampiran struk -->
+        <div class="section">
+          <label>Lampiran Struk</label>
+          <div id="reimb-files-${r.id}" style="font-size:12px;color:var(--txt3)">
+            <button class="tb-btn" onclick="loadReimbFiles('${r.id}')" style="font-size:12px">
+              <i class="ti ti-photo" style="font-size:12px"></i> Lihat Struk / Bukti
+            </button>
+          </div>
+        </div>
       </div>
 
       <div class="action-area">
