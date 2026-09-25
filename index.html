@@ -1131,10 +1131,12 @@ function doLogin() {
   errEl.textContent = '';
   if (!role) { errEl.textContent = 'Pilih role terlebih dahulu.'; return; }
   if (!name) { errEl.textContent = 'Masukkan nama Anda.'; return; }
+  if (name.length > 50) { errEl.textContent = 'Nama terlalu panjang (maks 50 karakter).'; return; }
+  if (/[·•\|\[\]{}<>]/.test(name)) { errEl.textContent = 'Nama tidak boleh mengandung karakter khusus.'; return; }
   if (pass !== PASSWORDS[role]) { errEl.textContent = 'Password salah.'; return; }
   currentUser = {role, name};
   saveSession(currentUser);
-  localStorage.setItem('kp_last_role', role); // simpan untuk autofill berikutnya
+  localStorage.setItem('kp_last_role', role);
   enterApp(currentUser);
 }
 
@@ -4754,12 +4756,12 @@ function renderReimbBody() {
   const body = document.getElementById('reimburs-body');
   if (!body) return;
 
-  const myId    = currentUser?.name || '';
+  const myId    = (currentUser?.name || '').toLowerCase().trim();
   const isAdmin = isReimbAdmin();
 
   // Filter sesuai tab
   const filtered = reimbSubTab === 'mine'
-    ? reimbList.filter(r => r.userId === myId)
+    ? reimbList.filter(r => (r.userId||'').toLowerCase().trim() === myId || (r.userName||'').toLowerCase().trim() === myId)
     : reimbList;
 
   if (isAdmin && reimbSubTab === 'all') {
