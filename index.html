@@ -4691,12 +4691,17 @@ async function loadReimburs() {
 
     // Tampilkan tab "Semua" hanya untuk Finance/Owner/Releaser
     const tabAll = document.getElementById('rsub-all');
-    if (tabAll) tabAll.style.display = isReimbAdmin() ? 'flex' : 'none';
-    // Tampilkan tombol export hanya untuk admin
     const btnExport = document.getElementById('btn-reimb-export');
-    if (btnExport) btnExport.style.display = isReimbAdmin() ? 'flex' : 'none';
-    // Default tab: Admin buka "Semua Pengajuan", karyawan buka "Pengajuan Saya"
-    if (isReimbAdmin() && reimbSubTab === 'mine') reimbSubTab = 'all';
+    if (isReimbAdmin()) {
+      if (tabAll) tabAll.style.display = 'flex';
+      if (btnExport) btnExport.style.display = 'flex';
+      // Default ke tab Semua untuk admin
+      reimbSubTab = 'all';
+    } else {
+      if (tabAll) tabAll.style.display = 'none';
+      if (btnExport) btnExport.style.display = 'none';
+      reimbSubTab = 'mine';
+    }
     // Sync tab active state
     document.getElementById('rsub-mine')?.classList.toggle('active', reimbSubTab==='mine');
     document.getElementById('rsub-all')?.classList.toggle('active', reimbSubTab==='all');
