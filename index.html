@@ -4707,8 +4707,11 @@ async function loadReimburs() {
     document.getElementById('rsub-all')?.classList.toggle('active', reimbSubTab==='all');
 
   } catch(e) { showToast('Gagal memuat reimburs','ti-alert-triangle'); }
-  renderReimbBody();
-  hideLoader();
+  // Pastikan render setelah semua state sudah di-set
+  requestAnimationFrame(() => {
+    renderReimbBody();
+    hideLoader();
+  });
 }
 
 function switchReimbTab(tab) {
