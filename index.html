@@ -4707,17 +4707,16 @@ async function loadReimburs() {
     document.getElementById('rsub-all')?.classList.toggle('active', reimbSubTab==='all');
 
   } catch(e) { showToast('Gagal memuat reimburs','ti-alert-triangle'); }
-  // Pastikan render setelah semua state sudah di-set
-  requestAnimationFrame(() => {
-    renderReimbBody();
-    hideLoader();
-  });
+  ensureReimbTab();
+  renderReimbBody();
+  hideLoader();
 }
 
 function switchReimbTab(tab) {
   reimbSubTab = tab;
   document.getElementById('rsub-mine')?.classList.toggle('active', tab==='mine');
   document.getElementById('rsub-all')?.classList.toggle('active', tab==='all');
+  ensureReimbTab();
   renderReimbBody();
 }
 
@@ -4767,17 +4766,29 @@ function renderReimbBody() {
   const myId    = (currentUser?.name || '').toLowerCase().trim();
   const isAdmin = isReimbAdmin();
 
-  // Filter sesuai tab
-  const filtered = reimbSubTab === 'mine'
-    ? reimbList.filter(r => (r.userId||'').toLowerCase().trim() === myId || (r.userName||'').toLowerCase().trim() === myId)
-    : reimbList;
+  // Admin selalu lihat semua di tab 'all', karyawan filter milik sendiri
+  const showAll = isAdmin && reimbSubTab === 'all';
 
-  if (isAdmin && reimbSubTab === 'all') {
-    // Finance/Owner/Releaser: tampilan LIST dengan grouping per status
+  const filtered = showAll
+    ? reimbList
+    : reimbList.filter(r =>
+        (r.userId||'').toLowerCase().trim() === myId ||
+        (r.userName||'').toLowerCase().trim() === myId
+      );
+
+  if (showAll) {
     renderReimbList(body, filtered);
   } else {
-    // Karyawan (atau Finance lihat milik sendiri): tampilan KANBAN
     renderReimbKanban(body, filtered);
+  }
+}
+
+// Pastikan saat render, admin selalu ke tab 'all'
+function ensureReimbTab() {
+  if (isReimbAdmin() && reimbSubTab !== 'all') {
+    reimbSubTab = 'all';
+    document.getElementById('rsub-mine')?.classList.remove('active');
+    document.getElementById('rsub-all')?.classList.add('active');
   }
 }
 
