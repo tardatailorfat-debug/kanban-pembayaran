@@ -4676,38 +4676,34 @@ function isReimbAdmin()    { return canApproveReimb() || canReleaseReimb(); }
 // ─── Load & render ────────────────────────────────────────────
 async function loadReimburs() {
   showLoader('Memuat data reimburs...');
+  reimbList = []; // Reset dulu
+
   try {
-    // Load rekening tersimpan user ini
-    const rRek = await apiGet({action:'getReimbursRekening', userId:currentUser?.name||''});
+    const [rRek, res] = await Promise.all([
+      apiGet({action:'getReimbursRekening', userId:currentUser?.name||''}),
+      apiGet({action:'getReimburs', userId:currentUser?.name||'', role:currentUser?.role||''})
+    ]);
     if (rRek.ok) reimbRekening = rRek.data;
+    if (res.ok)  reimbList     = res.data || [];
+  } catch(e) {
+    showToast('Gagal memuat reimburs','ti-alert-triangle');
+  }
 
-    // Load daftar reimburs
-    const res = await apiGet({
-      action:'getReimburs',
-      userId: currentUser?.name||'',
-      role:   currentUser?.role||''
-    });
-    if (res.ok) reimbList = res.data || [];
+  // Set tab sesuai role
+  const tabAll    = document.getElementById('rsub-all');
+  const btnExport = document.getElementById('btn-reimb-export');
+  if (isReimbAdmin()) {
+    if (tabAll)    tabAll.style.display    = 'flex';
+    if (btnExport) btnExport.style.display = 'flex';
+    reimbSubTab = 'all';
+  } else {
+    if (tabAll)    tabAll.style.display    = 'none';
+    if (btnExport) btnExport.style.display = 'none';
+    reimbSubTab = 'mine';
+  }
+  document.getElementById('rsub-mine')?.classList.toggle('active', reimbSubTab==='mine');
+  document.getElementById('rsub-all')?.classList.toggle('active', reimbSubTab==='all');
 
-    // Tampilkan tab "Semua" hanya untuk Finance/Owner/Releaser
-    const tabAll = document.getElementById('rsub-all');
-    const btnExport = document.getElementById('btn-reimb-export');
-    if (isReimbAdmin()) {
-      if (tabAll) tabAll.style.display = 'flex';
-      if (btnExport) btnExport.style.display = 'flex';
-      // Default ke tab Semua untuk admin
-      reimbSubTab = 'all';
-    } else {
-      if (tabAll) tabAll.style.display = 'none';
-      if (btnExport) btnExport.style.display = 'none';
-      reimbSubTab = 'mine';
-    }
-    // Sync tab active state
-    document.getElementById('rsub-mine')?.classList.toggle('active', reimbSubTab==='mine');
-    document.getElementById('rsub-all')?.classList.toggle('active', reimbSubTab==='all');
-
-  } catch(e) { showToast('Gagal memuat reimburs','ti-alert-triangle'); }
-  ensureReimbTab();
   renderReimbBody();
   hideLoader();
 }
@@ -4849,7 +4845,7 @@ function renderReimbKanbanCard(r, col) {
   const riskColor = r.aiRiskLevel==='Tinggi'?'var(--red)':r.aiRiskLevel==='Sedang'?'var(--orange)':'var(--green)';
 
   return `
-  <div onclick="openReimbDetail('${r.id}')"
+  <div data-reimb-id="${esc(r.id)}" onclick="openReimbDetailFromEl(this)"
     style="background:var(--bg2);border-radius:10px;padding:11px 12px;cursor:pointer;
       border:1.5px solid var(--bdr);transition:border-color .15s,box-shadow .15s"
     onmouseover="this.style.borderColor='var(--blue)';this.style.boxShadow='0 3px 12px rgba(47,111,237,.1)'"
@@ -4932,7 +4928,9 @@ function renderReimbCard(r) {
   const tgl         = r.tanggal ? new Date(r.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '-';
 
   return `
-  <div class="reimb-card" onclick="openReimbDetail('${r.id}')">
+  <div class="reimb-card" data-reimb-id="${esc(r.id)}"
+    onclick="openReimbDetailFromEl(this)"
+    style="cursor:pointer">
     <div class="reimb-card-top">
       <div style="display:flex;align-items:center;gap:8px">
         <span class="reimb-status ${statusClass}">${statusLabel}</span>
@@ -4940,12 +4938,12 @@ function renderReimbCard(r) {
           <span class="risk-dot" style="background:${riskDot}"></span>${r.aiRiskLevel}
         </span>` : ''}
       </div>
-      <span style="font-size:11.5px;color:var(--txt3);font-family:var(--mono)">${r.id}</span>
+      <span style="font-size:11.5px;color:var(--txt3);font-family:var(--mono)">${esc(r.id)}</span>
     </div>
     <div class="reimb-nominal">${fmt(r.nominal)}</div>
     <div class="reimb-ket">${esc(r.keterangan||'-')}</div>
     <div class="reimb-meta">
-      <span><i class="ti ti-user" style="font-size:11px"></i> ${esc(r.userName||'-')}</span>
+      <span><i class="ti ti-user" style="font-size:11px"></i> ${esc(cleanReimbName(r.userName))}</span>
       <span><i class="ti ti-calendar" style="font-size:11px"></i> ${tgl}</span>
       ${r.aiSummary ? `<span style="color:var(--txt3);font-style:italic">${esc(r.aiSummary)}</span>` : ''}
     </div>
@@ -5051,10 +5049,37 @@ async function loadReimbFiles(reimbId) {
   }
 }
 
+// Helper: bersihkan userName dari format "Role : X Usernam : Y" → ambil nama saja
+function cleanReimbName(raw) {
+  if (!raw) return '-';
+  // Kalau format "Role : Marketing Usernam : Fatahul Amien" → ambil bagian setelah "Usernam :"
+  if (raw.includes('Usernam')) {
+    const match = raw.match(/Usernam\s*:\s*(.+)/i);
+    if (match) return match[1].trim();
+  }
+  // Kalau format "Role : X" saja → return as-is (biar keliatan salah)
+  return raw;
+}
+
 // ─── Detail modal ─────────────────────────────────────────────
+// Dipanggil dari card onclick — ambil id dari data attribute, tidak dari string template
+function openReimbDetailFromEl(el) {
+  // Cari ancestor terdekat yang punya data-reimb-id
+  const card = el.closest ? el.closest('[data-reimb-id]') : el;
+  const id   = card?.dataset?.reimbId || card?.getAttribute('data-reimb-id');
+  if (!id) { showToast('ID tidak ditemukan','ti-alert-triangle'); return; }
+  openReimbDetail(id);
+}
+
 function openReimbDetail(id) {
-  const r = reimbList.find(x=>x.id===id);
-  if (!r) return;
+  const r = reimbList.find(x => String(x.id).trim() === String(id).trim());
+  if (!r) {
+    // Debug: cek isi reimbList
+    console.log('openReimbDetail: id=', id, 'reimbList length=', reimbList.length,
+      'ids=', reimbList.map(x=>x.id));
+    showToast('Data tidak ditemukan — coba klik tombol refresh (🔄)','ti-alert-triangle');
+    return;
+  }
 
   const statusLabel = REIMB_STATUS_LABEL[r.status] || r.status;
   const canApprove  = canApproveReimb() && ['AI_REVIEWED','WAITING_APPROVAL'].includes(r.status);
@@ -5078,7 +5103,7 @@ function openReimbDetail(id) {
       </div>
       <div class="modal-body">
         <div class="info-grid" style="margin-bottom:14px">
-          <span class="k">Pengaju</span><span class="v plain">${esc(r.userName||'-')}</span>
+          <span class="k">Pengaju</span><span class="v plain">${esc(cleanReimbName(r.userName||'-'))}</span>
           <span class="k">Tanggal</span><span class="v plain">${tgl}</span>
           <span class="k">Nominal</span><span class="v" style="font-size:15px;font-weight:800">${fmt(r.nominal)}</span>
           <span class="k">Keterangan</span><span class="v plain">${esc(r.keterangan||'-')}</span>
